@@ -172,7 +172,9 @@ mean = 0      # Mean of the Gaussian distribution (usually 0 for AWGN)
 std_dev = 0.1   # Standard deviation of the Gaussian distribution
 num_samples = len(testpacket)
 awgn_samples = np.random.normal(mean, std_dev, num_samples)
+phase_noise_samples = np.exp(1j * (np.random.randn(num_samples) * 0.1)) # adds random phase noise: adjust multiplier for "strength" of phase noise
 testpacket += awgn_samples
+testpacket = np.multiply(testpacket, phase_noise_samples)
 
 #################################
 # Add fractional delay
