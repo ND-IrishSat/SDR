@@ -16,15 +16,18 @@ This framework can hopefully be used to build a functional SDR link. Work has
 been started, but not finished, on getting this DSP framework to interface
 with USRP SDR and Sidekiq Z2 SDR through their respective software APIs.
 
+1-4 is transmit side
 GENERAL OUTLINE OF CODE:
 1. Declaration of Variables
 2. Preamble, Data, and Matched Filter Coefficient Generation
 3. Generation of Pulse Train // BPSK Modulation
 4. Pulse Shaping
+----TRANSMISSION and Noise----
 5. Simulation of Channel
 6. Clock Recovery
 7. Coarse Frequency Correction
 8. Fine Frequency Correction
+- IQ Imbalance Correction
 9. Frame Sync
 10. Demodulation
 
@@ -36,6 +39,7 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 from lib import CRC
+from lib.IQ_Imbalance_correction import ShowConstellationPlot, PlotWave, IQ_Imbalance_Correct
 
 # Declare Variables
 fs = 2.4e9             # carrier frequency 
@@ -171,9 +175,14 @@ https://wirelesspi.com/what-is-carrier-phase-offset-and-how-it-affects-the-symbo
 mean = 0      # Mean of the Gaussian distribution (usually 0 for AWGN)
 std_dev = 0.1   # Standard deviation of the Gaussian distribution
 num_samples = len(testpacket)
-awgn_samples = np.random.normal(mean, std_dev, num_samples)
-phase_noise_samples = np.exp(1j * (np.random.randn(num_samples) * 0.1)) # adds random phase noise: adjust multiplier for "strength" of phase noise
-testpacket += awgn_samples
+
+awgn_complex_samples = (np.random.randn(num_samples) + 1j*np.random.randn(num_samples)) / np.sqrt(2)
+noise_power = 0.2
+awgn_complex_samples *= np.sqrt(noise_power)
+#awgn_samples = np.random.normal(mean, std_dev, num_samples) #this is original noise func
+phase_noise_strength = 0.1
+phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random phase noise
+testpacket = np.add(testpacket, awgn_complex_samples)
 testpacket = np.multiply(testpacket, phase_noise_samples)
 
 #################################
@@ -187,7 +196,6 @@ h = np.sinc(n - delay) # calc filter taps
 h *= np.hamming(N) # window the filter to make sure it decays to 0 on both sides
 h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
 testpacket = np.convolve(testpacket, h) # apply filter
-
 ###################################
 # Add frequency offset - NOTE: Frequency offset of > 1% will result in inability of crosscorrelation operation to detect frame start
 
@@ -204,7 +212,6 @@ plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform")
 plt.title("After fractional delay and frequency offset")
 plt.legend(loc="upper left")
 plt.show()
-
 """
 Muller and Mueller Clock Recovery
 
@@ -326,8 +333,8 @@ N = len(testpacket)
 phase = 0
 freq = 0
 # These next two params are what to adjust, to make the feedback loop faster or slower (which impacts stability)
-alpha = 0.132
-beta = 0.00932
+alpha = 0.132 # how fast phase updates
+beta = 0.00932 # how fast frequency updates
 out = np.zeros(N, dtype=complex)
 freq_log = []
 for i in range(N):
@@ -367,6 +374,20 @@ f = np.linspace(-fs/2.0, fs/2.0, len(psd))
 plt.plot(f, psd)
 plt.title("Frequency offset after correction")
 plt.show()
+
+"""
+IQ Imbalance Correction ------
+
+Should put I and Q waves back to around 90° apart.
+This can be visualized on a constellation diagram.
+Without IQ imbalance correcion, the phase noise
+distorts the data, this puts it back to relatively
+a circle. It is visualized better with QPSK schemes.
+"""
+testpacket = IQ_Imbalance_Correct(testpacket, mean_period=1) # mean_period adjusts how many values it should take the mean of in each direction of an array for a given value.
+PlotWave(testpacket)
+ShowConstellationPlot(testpacket)
+#------------------------------------------------
 
 """
 Frame Sync
@@ -454,6 +475,18 @@ demod_bits = demod.symbol_demod(recoveredData, scheme, 1, len(preamble)) # gain 
 error = CRC.CRCcheck(demod_bits, CRC_key)
 print("CRC error: " + str(error))
 
+# This just calculates how many bits were correctly received
+num_correct = 0
+num = 0
+for index in range(0,len(data)):
+    num += 1
+    value = "NaN"
+    if (index <= len(demod_bits)-1):
+        value = demod_bits[index]
+        if (value == data[index]):
+            num_correct += 1
+print(f"Correct: {num_correct} / {num} bits   |   {round(num_correct / num * 100)}%")
+
 # Plot
 plt.stem(np.real(demod_bits), label="Recovered Data")
 plt.stem(0.5*np.real(data), 'ro', label="Original Data")
@@ -466,7 +499,7 @@ plt.show()
 
 # 1. For packet detection, add threshold slightly less than number of ones in preamble
 # 2. Look into equalizing channel gain
-# 3. Look into IQ imbalance correction
+#DONE --> 3. Look into IQ imbalance correction
 # 4. Add error checking
 
 # Look at the docs for further work and suggestions
