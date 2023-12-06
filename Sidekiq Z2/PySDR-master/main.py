@@ -485,7 +485,7 @@ for index in range(0,len(data)):
         value = demod_bits[index]
         if (value == data[index]):
             num_correct += 1
-print(f"Correct: {num_correct} / {num} bits   |   {round(num_correct / num * 100)}%")
+print(f"Received: {num_correct} / {num} bits   |   {round(num_correct / num * 100)}%")
 
 # Plot
 plt.stem(np.real(demod_bits), label="Recovered Data")
