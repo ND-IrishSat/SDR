@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#define MAX_ARRAY_LENGTH 1024
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, int* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -17,6 +18,7 @@ void printArray(char *string, int* arr, int length){
     }
     printf("]\n");
 }
+
 
 // Array Tuple that keeps track of the length of the array and a pointer to the array
 struct Array_Tuple {
@@ -65,4 +67,13 @@ struct Array_Tuple defineArray(int array[], int length){
     
     struct Array_Tuple tuple = {ptr, length};
     return tuple;
+}
+
+// Generates a random pointer to an array
+int * randomArray(int max_exclusive, int length){ // returns a pointer to an integer array
+    static int arr[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+    for (int i=0; i < length; i++){
+        arr[i] = rand() % max_exclusive;
+    }
+    return arr; // to use this: int *array; array= randomArray(2,size);
 }
