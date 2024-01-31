@@ -1,32 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include "standardArray.h"
 #define MAX_ARRAY_LENGTH 1024
-void printArray(char *string, int* arr, int length){
-    for (int i = 0; i < strlen(string); i++) {
-        printf("%c", string[i]);
-    }
-    printf("(%d): ", length);
-    printf("[");
-    for (int i=0; i < length; i++){
-        if (i != 0){
-            printf(", ");
-        }
-        printf("%d", arr[i]);
-    }
-    printf("]\n");
-}
 
-struct Array_Length_Tuple {
-    int* array;
-    int length;
-};
-void freeArrayMemory(struct Array_Length_Tuple array){
-    free(array.array);
-    return;
-}
+
 // CRC
-struct Array_Length_Tuple CRC_xor(struct Array_Length_Tuple a_array, struct Array_Length_Tuple b_array){
+
+// CRC_xor 
+struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_array){
     int length = b_array.length;
     static int out_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     for (int i = 1; i < length; i++){
@@ -38,23 +21,23 @@ struct Array_Length_Tuple CRC_xor(struct Array_Length_Tuple a_array, struct Arra
             out_array[i-1] = 1;
         }
     }
-    struct Array_Length_Tuple tuple = {out_array, length-1};
+    struct Array_Tuple tuple = {out_array, length-1};
     return tuple;
 }
-
-struct Array_Length_Tuple CRC_mod2div(struct Array_Length_Tuple dividend_array, struct Array_Length_Tuple divisor_array){
+// CRC_mod2div
+struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_Tuple divisor_array){
     int pick = divisor_array.length;
     static int temp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     
     for (int i=0; i < pick; i++){
         temp[i] = dividend_array.array[i];
     }
-    struct Array_Length_Tuple tmp = {temp, pick};
+    struct Array_Tuple tmp = {temp, pick};
 
     while (pick < dividend_array.length){
         if (tmp.array[0] == 1){
             int new_tmp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
-            struct Array_Length_Tuple x = CRC_xor(divisor_array, tmp);
+            struct Array_Tuple x = CRC_xor(divisor_array, tmp);
             int last_index;
             for (int i=0; i < x.length; i++){
                 new_tmp[i] = x.array[i];
@@ -70,8 +53,8 @@ struct Array_Length_Tuple CRC_mod2div(struct Array_Length_Tuple dividend_array, 
             for(int i=0; i < pick;  i++){
                 ones_array[i] = 1;
             }
-            struct Array_Length_Tuple ones_tuple = {ones_array, pick};
-            struct Array_Length_Tuple xor_out = CRC_xor(ones_tuple, tmp);
+            struct Array_Tuple ones_tuple = {ones_array, pick};
+            struct Array_Tuple xor_out = CRC_xor(ones_tuple, tmp);
             int last_index;
             for (int i=0; i < xor_out.length; i++){
                 new_tmp_2[i] = xor_out.array[i];
@@ -88,22 +71,22 @@ struct Array_Length_Tuple CRC_mod2div(struct Array_Length_Tuple dividend_array, 
     }
     
     if (tmp.array[0] == 1){
-        struct Array_Length_Tuple xor_out_2 = CRC_xor(divisor_array, tmp);
-        struct Array_Length_Tuple out_array = {xor_out_2.array, xor_out_2.length};
+        struct Array_Tuple xor_out_2 = CRC_xor(divisor_array, tmp);
+        struct Array_Tuple out_array = {xor_out_2.array, xor_out_2.length};
         return out_array;
     } else {
         int zeros_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
         for(int i=0; i < pick; i++){
             zeros_array[i] = 0;
         }
-        struct Array_Length_Tuple zeros_tuple = {zeros_array, pick};
-        struct Array_Length_Tuple xor_out_2 = CRC_xor(zeros_tuple, tmp);
-        struct Array_Length_Tuple out_array = {xor_out_2.array, xor_out_2.length};
+        struct Array_Tuple zeros_tuple = {zeros_array, pick};
+        struct Array_Tuple xor_out_2 = CRC_xor(zeros_tuple, tmp);
+        struct Array_Tuple out_array = {xor_out_2.array, xor_out_2.length};
         return out_array;
     }
 }
-
-struct Array_Length_Tuple CRC_encodeData(struct Array_Length_Tuple data, struct Array_Length_Tuple key){
+// CRC_encodedData2
+struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple key){
     int appended_data[data.length+key.length-1]; // Static allocation
     for (int i=0; i<data.length; i++){
         appended_data[i] = data.array[i];
@@ -111,8 +94,8 @@ struct Array_Length_Tuple CRC_encodeData(struct Array_Length_Tuple data, struct 
     for (int i=data.length; i<data.length+key.length-1; i++){
         appended_data[i] = 0;
     }
-    struct Array_Length_Tuple appended_data_tuple = {appended_data, data.length+key.length-1};
-    struct Array_Length_Tuple mod2div_out = CRC_mod2div(appended_data_tuple, key);
+    struct Array_Tuple appended_data_tuple = {appended_data, data.length+key.length-1};
+    struct Array_Tuple mod2div_out = CRC_mod2div(appended_data_tuple, key);
     int* codeword; // Static allocation
     codeword = (int*)calloc(data.length+mod2div_out.length, sizeof(int)); // need to free after
     for (int i=0; i<data.length; i++){
@@ -121,12 +104,12 @@ struct Array_Length_Tuple CRC_encodeData(struct Array_Length_Tuple data, struct 
     for (int i=data.length; i<data.length+mod2div_out.length; i++){
         codeword[i] = mod2div_out.array[i - data.length];
     }
-    struct Array_Length_Tuple tuple = {codeword, data.length+mod2div_out.length};
+    struct Array_Tuple tuple = {codeword, data.length+mod2div_out.length};
     return tuple;
 }
 
-int CRC_check(struct Array_Length_Tuple codeword, struct Array_Length_Tuple key){
-    struct Array_Length_Tuple checkword = CRC_mod2div(codeword, key);
+int CRC_check(struct Array_Tuple codeword, struct Array_Tuple key){
+    struct Array_Tuple checkword = CRC_mod2div(codeword, key);
     int error = 0;
     for (int i = 0; i < checkword.length; i++) {
         if (checkword.array[i] == 0){
@@ -135,23 +118,6 @@ int CRC_check(struct Array_Length_Tuple codeword, struct Array_Length_Tuple key)
         }
     }
     return error;
-}
-
-struct Array_Length_Tuple defineArray(int array[], int length){
-    
-    int* ptr;
-    ptr = (int*)calloc(length, sizeof(int));
-    if (ptr == NULL){
-        printf("Not enough memory to allocate, what should happen?\n");
-        exit(0);
-    }
-    for (int i = 0; i < length; i++)
-    {
-        ptr[i] = array[i];
-    }
-    
-    struct Array_Length_Tuple tuple = {ptr, length};
-    return tuple;
 }
 
 int * randomArray(int max_exclusive, int length){ // returns a pointer to an integer
@@ -174,18 +140,18 @@ int main(){
     char scheme[] = "BPSK"; // Modulation scheme 'OOK', 'QPSK', or 'QAM'
     double alpha = 0.5; // roll-off factor of the RRC pulse-shaping filter
 
-    struct Array_Length_Tuple preamble = defineArray((int[]){0,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,1,0}, 60);// optimal periodic binary code for N = 63 https://ntrs.nasa.gov/citations/19800017860
-    struct Array_Length_Tuple data = {randomArray(2,data_length), data_length}; // this points to the random array generated;  creates 256 random bits
+    struct Array_Tuple preamble = defineArray((int[]){0,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,1,0}, 60);// optimal periodic binary code for N = 63 https://ntrs.nasa.gov/citations/19800017860
+    struct Array_Tuple data = {randomArray(2,data_length), data_length}; // this points to the random array generated;  creates 256 random bits
 
-    struct Array_Length_Tuple CRC_key = defineArray((int[]){1,0,0,1,1,0,0,0,0,1,1,1}, 12);// Best CRC polynomials: https://users.ece.cmu.edu/~koopman/crc/
+    struct Array_Tuple CRC_key = defineArray((int[]){1,0,0,1,1,0,0,0,0,1,1,1}, 12);// Best CRC polynomials: https://users.ece.cmu.edu/~koopman/crc/
     
     
     // Working Demo Code Here ----------------------------------------------------
     // calloc(length, size) is used in defineArray() and for the output variable of CRC_encodeData()
 
-    struct Array_Length_Tuple demoA = defineArray((int[]){1,0,0,1,0,0}, 6);
-    struct Array_Length_Tuple demoB = defineArray((int[]){1,1,0,1}, 4);
-    struct Array_Length_Tuple out = CRC_encodeData(demoA, demoB);
+    struct Array_Tuple demoA = defineArray((int[]){1,0,0,1,0,0}, 6);
+    struct Array_Tuple demoB = defineArray((int[]){1,1,0,1}, 4);
+    struct Array_Tuple out = CRC_encodeData(demoA, demoB);
     
     printArray("Out", out.array, out.length);
     freeArrayMemory(demoA);
