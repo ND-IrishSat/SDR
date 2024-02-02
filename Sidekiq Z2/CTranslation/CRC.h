@@ -9,10 +9,10 @@
 // CRC_xor 
 struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_array){
     int length = b_array.length;
-    static int out_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+    static double out_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     for (int i = 1; i < length; i++){
-        int element1 = a_array.array[i];
-        int element2 = b_array.array[i];
+        double element1 = a_array.array[i];
+        double element2 = b_array.array[i];
         if (element1 == element2){
             out_array[i-1] = 0;
         } else {
@@ -25,7 +25,7 @@ struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_arra
 // CRC_mod2div
 struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_Tuple divisor_array){
     int pick = divisor_array.length;
-    static int temp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+    static double temp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     
     for (int i=0; i < pick; i++){
         temp[i] = dividend_array.array[i];
@@ -34,7 +34,7 @@ struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_T
 
     while (pick < dividend_array.length){
         if (tmp.array[0] == 1){
-            int new_tmp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+            double new_tmp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
             struct Array_Tuple x = CRC_xor(divisor_array, tmp);
             int last_index;
             for (int i=0; i < x.length; i++){
@@ -46,8 +46,8 @@ struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_T
                 tmp.array[i] = new_tmp[i];
             }
         } else {
-            int new_tmp_2[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
-            int ones_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+            double new_tmp_2[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+            double ones_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
             for(int i=0; i < pick;  i++){
                 ones_array[i] = 1;
             }
@@ -73,7 +73,7 @@ struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_T
         struct Array_Tuple out_array = {xor_out_2.array, xor_out_2.length};
         return out_array;
     } else {
-        int zeros_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
+        double zeros_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
         for(int i=0; i < pick; i++){
             zeros_array[i] = 0;
         }
@@ -85,7 +85,7 @@ struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_T
 }
 // CRC_encodedData2
 struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple key){
-    int appended_data[data.length+key.length-1]; // Static allocation
+    double appended_data[data.length+key.length-1]; // Static allocation
     for (int i=0; i<data.length; i++){
         appended_data[i] = data.array[i];
     }
@@ -94,8 +94,8 @@ struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple ke
     }
     struct Array_Tuple appended_data_tuple = {appended_data, data.length+key.length-1};
     struct Array_Tuple mod2div_out = CRC_mod2div(appended_data_tuple, key);
-    int* codeword; // Static allocation
-    codeword = (int*)calloc(data.length+mod2div_out.length, sizeof(int)); // need to free after
+    double* codeword; // Static allocation
+    codeword = (double*)calloc(data.length+mod2div_out.length, sizeof(double)); // need to free after
     for (int i=0; i<data.length; i++){
         codeword[i] = data.array[i];
     }
