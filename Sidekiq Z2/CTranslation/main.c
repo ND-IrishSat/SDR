@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "standardArray.h"
 #include "CRC.h"
-
+#include "iq_imbalance.h"
 
 int main(){
     // Declare Variables
@@ -21,18 +22,13 @@ int main(){
     struct Array_Tuple data = {randomArray(2,data_length), data_length}; // this points to the random array generated;  creates 256 random bits
 
     struct Array_Tuple CRC_key = defineArray((double[]){1,0,0,1,1,0,0,0,0,1,1,1}, 12);// Best CRC polynomials: https://users.ece.cmu.edu/~koopman/crc/
-    
-    
     // Working Demo Code Here ----------------------------------------------------
     // calloc(length, size) is used in defineArray() and for the output variable of CRC_encodeData()
 
-    struct Array_Tuple demoA = defineArray((double[]){1,0,0,1,0,0}, 6);
-    struct Array_Tuple demoB = defineArray((double[]){1,1,0,1}, 4);
-    struct Array_Tuple out = CRC_encodeData(demoA, demoB);
-    
+    struct Array_Tuple demoA = defineArray((double[]){1.4, 5.3, 6.3, 1.2, -3.0, 9.3, 5.4, 1.2, -9.1, 8.2, 1.0, 4.5, -2.3}, 13);
+    struct Array_Tuple out = averages(demoA, 10);
     printArray("Out", out.array, out.length);
     freeArrayMemory(demoA);
-    freeArrayMemory(demoB);
     freeArrayMemory(out); // when done with the array, need to free its memory
     // ---------------------------------------------------------------------------
     //struct Array_Length_Tuple tuple = CRC_encodeData(data.array, CRC_key.array);

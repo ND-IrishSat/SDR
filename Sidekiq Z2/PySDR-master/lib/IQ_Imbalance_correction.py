@@ -81,20 +81,22 @@ def IQ_Imbalance_Correct(packet, mean_period=10000):
     return crrected_packet
 
 if __name__ == "__main__":
-    testpacket = np.load('lib/IQImbalancetextpacket.npy')
-    ShowConstellationPlot(testpacket)
-    ShowConstellationPlot(testpacket,1)
-    corrected = IQ_Imbalance_Correct(testpacket)
-    ShowConstellationPlot(corrected, 1)
-    plt.scatter([-1,1], [0,0], c='y', label="Constellation Diagram (TestPacket)")
-    plt.scatter(np.real(testpacket), np.imag(testpacket), c='b', label="Constellation Diagram (TestPacket)")
-    plt.scatter(np.real(corrected), np.imag(corrected), c='r',label="Constellation Diagram (Corrected)")
-    plt.xlabel('Real (I)')
-    plt.ylabel('Imaginary (Q)')
-    plt.xlim(-1.5, 1.5)
-    plt.ylim(-1.5, 1.5)
-    plt.grid(True, which="both")
-    plt.show()
+    a = np.array([1.4, 5.3, 6.3, 1.2, -3.0, 9.3, 5.4, 1.2, -9.1, 8.2, 1.0, 4.5, -2.3])
+    print(Mean(a, 10))
+    # testpacket = np.load('lib/IQImbalancetextpacket.npy')
+    # ShowConstellationPlot(testpacket)
+    # ShowConstellationPlot(testpacket,1)
+    # corrected = IQ_Imbalance_Correct(testpacket)
+    # ShowConstellationPlot(corrected, 1)
+    # plt.scatter([-1,1], [0,0], c='y', label="Constellation Diagram (TestPacket)")
+    # plt.scatter(np.real(testpacket), np.imag(testpacket), c='b', label="Constellation Diagram (TestPacket)")
+    # plt.scatter(np.real(corrected), np.imag(corrected), c='r',label="Constellation Diagram (Corrected)")
+    # plt.xlabel('Real (I)')
+    # plt.ylabel('Imaginary (Q)')
+    # plt.xlim(-1.5, 1.5)
+    # plt.ylim(-1.5, 1.5)
+    # plt.grid(True, which="both")
+    # plt.show()
 
 
 
