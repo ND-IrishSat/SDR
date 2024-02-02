@@ -31,7 +31,7 @@ void freeArrayMemory(struct Array_Tuple array){
     return;
 }
 // Takes in two arrays and appends them in the order of a then b. User can also opt to free the memory after the are appended
-struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple ){
+struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple b){
     double* ptr;
     ptr = (double*)calloc(a.length + b.length, sizeof(double));
     for (int i = 0; i < a.length; i++)
@@ -42,7 +42,7 @@ struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple ){
     {
         ptr[i+a.length] = b.array[i];
     }
-    printf("Free the appended array from memory after use!\n")
+    printf("Free the appended array from memory after use!\n");
     struct Array_Tuple out = {ptr, a.length + b.length};
     return out;
 }
