@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define MAX_ARRAY_LENGTH 1024
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, double* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -18,6 +17,21 @@ void printArray(char *string, double* arr, int length){
     }
     printf("]\n");
 }
+void printComplexArray(char *string, double* arr, double* imag_arr, int length){
+    for (int i = 0; i < strlen(string); i++) {
+        printf("%c", string[i]);
+    }
+    printf("(%d): ", length);
+    printf("[");
+    for (int i=0; i < length; i++){
+        if (i != 0){
+            printf(", ");
+        }
+        printf("%lf+%lfj", arr[i], imag_arr[i]);
+    }
+    printf("]\n");
+}
+
 
 
 // Array Tuple that keeps track of the length of the array and a pointer to the array
@@ -25,6 +39,12 @@ struct Array_Tuple {
     double* array;
     int length;
 };
+//
+struct Complex_Array_Tuple {
+    struct Array_Tuple real;
+    struct Array_Tuple imaginary;
+};
+
 // Pass in an Array_Tuple and it will free the memory from that pointer, this only needs to be done on pointers that use the calloc() and malloc() functions
 void freeArrayMemory(struct Array_Tuple array){
     free(array.array);
@@ -47,7 +67,16 @@ struct Array_Tuple defineArray(double array[], int length){
     struct Array_Tuple tuple = {ptr, length};
     return tuple;
 }
-
+double meanArray(double* array, int length){ // returns a pointer to an integer array
+    double sum = 0;
+    for (int i = 0; i < length; i++)
+    {
+        sum += array[i];
+    }
+    double avg = sum / (double)length;
+    
+    return avg; // to use this: int *array; array= randomArray(2,size);
+}
 // Generates a random pointer to an array
 double * randomArray(int max_exclusive, int length){ // returns a pointer to an integer array
     static double arr[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array

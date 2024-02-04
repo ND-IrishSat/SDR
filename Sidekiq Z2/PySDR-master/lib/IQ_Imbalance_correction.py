@@ -69,34 +69,38 @@ def IQ_Imbalance_Correct(packet, mean_period=10000):
     I_second = I - BI
     Q_Second = Q - BQ
     a = np.sqrt(2 * np.mean(np.square(I_second)))
-    sin_psi = (2 / 1) * np.mean(I_second * Q_Second)
+    sin_psi = (2 / a) * np.mean(I_second * Q_Second)
     cos_psi = np.sqrt(np.subtract(1, np.square(sin_psi)))
     # Corrrection Matrix Parameters
     A = 1 / a
     C = - sin_psi / (a * cos_psi)
     D = 1 / cos_psi
-    I_final = A * I + 0 * Q
+    I_final = A * I
     Q_final = C * I + D * Q
+    print(f"I50: {I_final[50]}")
+    print(f"I100: {I_final[100]}")
+    print(f"Q50: {Q_final[50]}")
+    print(f"Q100: {Q_final[100]}")
+
     crrected_packet = I_final + 1j * Q_final
     return crrected_packet
 
 if __name__ == "__main__":
-    a = np.array([1.4, 5.3, 6.3, 1.2, -3.0, 9.3, 5.4, 1.2, -9.1, 8.2, 1.0, 4.5, -2.3])
-    print(Mean(a, 10))
-    # testpacket = np.load('lib/IQImbalancetextpacket.npy')
-    # ShowConstellationPlot(testpacket)
-    # ShowConstellationPlot(testpacket,1)
-    # corrected = IQ_Imbalance_Correct(testpacket)
-    # ShowConstellationPlot(corrected, 1)
-    # plt.scatter([-1,1], [0,0], c='y', label="Constellation Diagram (TestPacket)")
-    # plt.scatter(np.real(testpacket), np.imag(testpacket), c='b', label="Constellation Diagram (TestPacket)")
-    # plt.scatter(np.real(corrected), np.imag(corrected), c='r',label="Constellation Diagram (Corrected)")
-    # plt.xlabel('Real (I)')
-    # plt.ylabel('Imaginary (Q)')
-    # plt.xlim(-1.5, 1.5)
-    # plt.ylim(-1.5, 1.5)
-    # plt.grid(True, which="both")
-    # plt.show()
+    testpacket = np.load('Sidekiq Z2/PySDR-master/lib/IQImbalancetextpacket.npy')
+    #ShowConstellationPlot(testpacket)
+    #ShowConstellationPlot(testpacket,1)
+    corrected = IQ_Imbalance_Correct(testpacket, 20)
+    print(corrected)
+    #ShowConstellationPlot(corrected, 1)
+    plt.scatter([-1,1], [0,0], c='y', label="Constellation Diagram (TestPacket)")
+    plt.scatter(np.real(testpacket), np.imag(testpacket), c='b', label="Constellation Diagram (TestPacket)")
+    plt.scatter(np.real(corrected), np.imag(corrected), c='r',label="Constellation Diagram (Corrected)")
+    plt.xlabel('Real (I)')
+    plt.ylabel('Imaginary (Q)')
+    plt.xlim(-1.5, 1.5)
+    plt.ylim(-1.5, 1.5)
+    plt.grid(True, which="both")
+    plt.show()
 
 
 
