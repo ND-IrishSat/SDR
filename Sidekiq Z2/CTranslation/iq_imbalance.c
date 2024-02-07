@@ -68,7 +68,6 @@ struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet,
     double A = 1.0 / a;
     double C = -sin_psi / (a * cos_psi);
     double D = 1 / cos_psi;
-    //TODO: create final I and Q, then free memory of all temp arrays
     double* I_final;
     I_final = (double*)calloc(I.length, sizeof(double));
     double* Q_final;

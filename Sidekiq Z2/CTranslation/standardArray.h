@@ -85,3 +85,30 @@ double * randomArray(int max_exclusive, int length){ // returns a pointer to an 
     }
     return arr; // to use this: int *array; array= randomArray(2,size);
 }
+
+struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple b){
+    int length = a.length + b.length;
+    double* ptr;
+    ptr = (double*)calloc(length, sizeof(double));
+    for (int i = 0; i < a.length; i++)
+    {
+        ptr[i] = a.array[i];
+    }
+    for (int i = 0; i < b.length; i++)
+    {
+        ptr[a.length+i] = b.array[i];
+    }
+    struct Array_Tuple t = {ptr, length};
+    return t; //once done, must free memory of ptr
+}
+
+struct Array_Tuple flip(struct Array_Tuple a){
+    double* ptr;
+    ptr = (double*)calloc(a.length, sizeof(double));
+    for (int i = 0; i < a.length; i++)
+    {
+        ptr[i] = a.array[a.length-1-i];
+    }
+    struct Array_Tuple t = {ptr, a.length};
+    return t; //once done, must free memory of ptr
+}

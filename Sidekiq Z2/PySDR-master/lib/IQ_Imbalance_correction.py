@@ -21,7 +21,7 @@ def Mean(array, period):
                 break # speeds it up some
         means.append(sum / num)
     return means
-def ShowConstellationPlot(packet, mag=999):
+def ShowConstellationPlot(packet, mag=999, title="After IQ Imbalance Correction"):
     x = []
     y = []
     phase = []
@@ -42,6 +42,7 @@ def ShowConstellationPlot(packet, mag=999):
     fig = plt.figure()
     ax = fig.add_subplot()
     ax.set_aspect('equal', adjustable='box')
+    plt.title(title)
     plt.scatter(x, y, label="Constellation Diagram (Packet In)")
     plt.xlabel('Real (I)')
     plt.ylabel('Imaginary (Q)')
@@ -77,10 +78,6 @@ def IQ_Imbalance_Correct(packet, mean_period=10000):
     D = 1 / cos_psi
     I_final = A * I
     Q_final = C * I + D * Q
-    print(f"I50: {I_final[50]}")
-    print(f"I100: {I_final[100]}")
-    print(f"Q50: {Q_final[50]}")
-    print(f"Q100: {Q_final[100]}")
 
     crrected_packet = I_final + 1j * Q_final
     return crrected_packet

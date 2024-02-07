@@ -109,7 +109,6 @@ for bit in bits:
     pulse = np.zeros(sps)
     pulse[0] = bit*2-1 # set the first value to either a 1 or -1
     pulse_train = np.concatenate((pulse_train, pulse)) # add the 8 samples to the signal
-
 plt.stem(pulse_train, label="Pulse Train")
 plt.stem(bits, 'ro', label="Original Bits")
 plt.legend(loc="upper right")
@@ -177,14 +176,13 @@ std_dev = 0.1   # Standard deviation of the Gaussian distribution
 num_samples = len(testpacket)
 
 awgn_complex_samples = (np.random.randn(num_samples) + 1j*np.random.randn(num_samples)) / np.sqrt(2)
-noise_power = 0.2
-awgn_complex_samples *= np.sqrt(noise_power)
+noise_power = 2
+awgn_complex_samples /= np.sqrt(noise_power)
 #awgn_samples = np.random.normal(mean, std_dev, num_samples) #this is original noise func
 phase_noise_strength = 0.1
-phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random phase noise
+phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random imaginary phase noise
 testpacket = np.add(testpacket, awgn_complex_samples)
 testpacket = np.multiply(testpacket, phase_noise_samples)
-
 #################################
 # Add fractional delay
 
