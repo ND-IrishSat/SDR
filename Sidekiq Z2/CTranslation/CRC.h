@@ -1,3 +1,5 @@
+// CRC.h
+// Rylan Paul
 #include "CRC.c"
 // CRC
 

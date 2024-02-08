@@ -23,14 +23,13 @@ Notes:
 
 void encodepacket();
 
-struct Complex_Array_Tuple generateNoise(struct Complex_Array_Tuple testpacket);
 
 int main(){
     encodepacket();
     return 0;
 }
 
-void stuff(){
+void encodepacket(){
     // Declare Variables
     const int data_length = 10;
     double fs = 2.4e9; // carrier frequency 
@@ -63,33 +62,4 @@ void stuff(){
     printArray("T", testpacket_noise.array, testpacket_noise.length);
     // ---------------------------------------------
     return;
-}
-
-struct Complex_Array_Tuple generateNoise(struct Complex_Array_Tuple testpacket){
-    // vars
-    int max = 1;
-    double mean = 0;
-    double std_dev = 0.1;
-    double noise_power = 0.2;
-    int num_samples = testpacket.real.length;
-    double phase_noise_strength = 0.1;
-
-    // creating general normal distribution random arrays for real and complex
-    double* awgn_comlpex_samples_real;
-    double* awgn_comlpex_samples_imag;
-    awgn_comlpex_samples_real = (double*)calloc(num_samples, sizeof(double));
-    awgn_comlpex_samples_imag = (double*)calloc(num_samples, sizeof(double));
-    for (int i = 0; i < num_samples; i++)
-    {
-        double phase_noise = rand_norm(mean, std_dev) * phase_noise_strength;
-        awgn_comlpex_samples_real[i] = rand_norm(mean, std_dev) / sqrt(noise_power) * cos(phase_noise);
-        awgn_comlpex_samples_imag[i] = rand_norm(mean, std_dev) / sqrt(noise_power) * sin(phase_noise);
-    }
-
-    struct Array_Tuple real = {awgn_comlpex_samples_real, num_samples};
-    struct Array_Tuple imag = {awgn_comlpex_samples_imag, num_samples};
-    struct Complex_Array_Tuple out = {real, imag};
-    return out;
-    //awgn_comlpex_samples_real = ;
-    //awgn_comlpex_samples_imaginary = ;
 }

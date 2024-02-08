@@ -1,3 +1,7 @@
+// iq_imbalance.c
+// Rylan Paul
+
+
 // gets the average of every value within the period
 struct Array_Tuple averages(struct Array_Tuple array, int period){ //! Returns a calloc ptr
     double* means;
