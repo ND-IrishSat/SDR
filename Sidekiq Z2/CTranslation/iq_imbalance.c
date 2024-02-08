@@ -1,5 +1,5 @@
-// gets the average of every value within the period, also be sure to free memory after use
-struct Array_Tuple averages(struct Array_Tuple array, int period){
+// gets the average of every value within the period
+struct Array_Tuple averages(struct Array_Tuple array, int period){ //! Returns a calloc ptr
     double* means;
     means = (double*)calloc(array.length, sizeof(double));
     for (int index = 0; index < array.length; index++)
@@ -29,8 +29,11 @@ struct Array_Tuple averages(struct Array_Tuple array, int period){
     return out;
 }
 
-struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet, int mean_period)
+// Code for IQImbalance Correction
+struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet, int mean_period) //! Returns 2 calloc ptrs 
 {
+    // This follows the formula shown by the matrix in this article:
+    // https://www.faculty.ece.vt.edu/swe/argus/iqbal.pdf
 
     // divide into real and complex
     /* data */
@@ -78,8 +81,10 @@ struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet,
         I_final[i] = A * I.array[i];
         Q_final[i] = C * I.array[i] + D * Q.array[i];
     }
-    free(I_times_Q_second);
+    free(BI.array);
+    free(BQ.array);
     free(I_second_squared); // both temp arrays
+    free(I_times_Q_second);
     struct Array_Tuple I_out = {I_final, I.length};
     struct Array_Tuple Q_out = {Q_final, Q.length};
     struct Complex_Array_Tuple out = {I_out, Q_out};

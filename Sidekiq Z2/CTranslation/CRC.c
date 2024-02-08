@@ -78,7 +78,7 @@ struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_T
     }
 }
 // CRC_encodedData2
-struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple key){
+struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple key){ //! Returns a calloc ptr
     double appended_data[data.length+key.length-1]; // Static allocation
     for (int i=0; i<data.length; i++){
         appended_data[i] = data.array[i];

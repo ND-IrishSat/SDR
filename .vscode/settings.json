@@ -6,6 +6,7 @@
         "bitset": "c",
         "array": "c",
         "random": "c",
-        "charconv": "c"
+        "charconv": "c",
+        "stdbool.h": "c"
     }
 }

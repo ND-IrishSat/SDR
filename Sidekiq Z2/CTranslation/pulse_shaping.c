@@ -7,7 +7,7 @@
 struct array_baseband {
   int *baseband;
   int length;
-}
+};
 
 // Function prototypes
 void pulse_shaping(float *a, int M, float fs, char *pulse_shape, float alpha, int L, float *baseband);
