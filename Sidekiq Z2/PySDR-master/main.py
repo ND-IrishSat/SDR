@@ -292,6 +292,8 @@ fft_samples = testpacket**2
 psd = np.fft.fftshift(np.abs(np.fft.fft(fft_samples)))
 f = np.linspace(-fs/2.0, fs/2.0, len(psd))
 
+print(f"psd: {psd}")
+
 max_freq = f[np.argmax(psd)]
 Ts = 1/fs # calc sample period
 t = np.arange(0, Ts*len(testpacket), Ts) # create time vector

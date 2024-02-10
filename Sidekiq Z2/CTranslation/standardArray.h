@@ -9,9 +9,11 @@
 //
 
 #include <string.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fftw3.h>
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, double* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -32,14 +34,14 @@ void printComplexArray(char *string, double* arr, double* imag_arr, int length){
         printf("%c", string[i]);
     }
     printf("(%d): ", length);
-    printf("[");
+    printf("[ ");
     for (int i=0; i < length; i++){
         if (i != 0){
             printf(", ");
         }
-        printf("%lf+%lfj", arr[i], imag_arr[i]);
+        printf("%lf%c%lfj", arr[i], (imag_arr[i] < 0 ? '\0' : '+'), imag_arr[i]);
     }
-    printf("]\n");
+    printf(" ]\n");
 }
 
 
@@ -90,7 +92,7 @@ double meanArray(double* array, int length){ // returns a pointer to an integer 
 // Generates a random pointer to an array
 double * randomArray(int max_exclusive, int length){ //! Returns a calloc ptr
     double* arr; // Assuming maximum length of the array
-    arr = (double*)calloc(length, sizeof(dobule))
+    arr = (double*)calloc(length, sizeof(double));
     for (int i=0; i < length; i++){
         arr[i] = (double)(rand() % max_exclusive);
     }
@@ -176,6 +178,43 @@ double rand_norm(double mu, double sigma){
     return (mu + sigma * (double)rand_norm_X1);
 }
 
+//np.arange creates an array from start to end (exclusive) by a step
+struct Array_Tuple arange(double start, double end, double step){
+    int length = 0;
+    static double array[2048];
+    double num = start;
+    while (num < end){
+        array[length] = num;
+        num += step;
+        length += 1;
+    }
+    double* out_array;
+    out_array = (double*)calloc(length, sizeof(double));
+    for (int i = 0; i < length; i++)
+    {
+        out_array[i] = array[i];
+    }
+    
+    struct Array_Tuple out = {out_array, length};
+    return out;
+}
+
+//np.linspace creates an array from start to end with x number of points defined by length
+struct Array_Tuple linspace(double start, double end, double length){
+    double* out_array;
+    out_array = (double*)calloc(length, sizeof(double));
+    double step = (end - start) / (length-1);
+    double num = start;
+    for (int i = 0; i < length; i++)
+    {
+        out_array[i] = num;
+        num += step;
+    }
+    
+    struct Array_Tuple out = {out_array, length};
+    return out;
+}
+
 // Takes a bit array and converts it to a pulse train from -1 to 1 with sps-1 zeros between each bit
 struct Array_Tuple pulsetrain(struct Array_Tuple bits, int sps){ //! Returns a calloc ptr
     double* array_ptr;
@@ -228,13 +267,127 @@ struct Complex_Array_Tuple generateNoise(struct Complex_Array_Tuple testpacket){
     //awgn_comlpex_samples_imaginary = ;
 }
 
+struct Complex_Array_Tuple everyOtherElement(struct Complex_Array_Tuple array, int offset){ //! Returns a calloc ptr
+    if (offset >= 1){
+        offset = 1;
+    } else {
+        offset = 0;
+    }
+    double* real;
+    real = (double*)calloc(array.real.length, sizeof(double));
+    double* imaginary;
+    imaginary = (double*)calloc(array.imaginary.length, sizeof(double));
+    int l_index = 0;
+    for (int i = 0; i+offset < array.real.length; i+=2)
+    {
+        real[l_index] = array.real.array[i+offset];
+        imaginary[l_index] = array.imaginary.array[i+offset];
+        l_index ++;
+    }
+    int N = (int)array.real.length / (int)2;
+    struct Array_Tuple i_out = {real, N};
+    struct Array_Tuple q_out = {imaginary, N};
+    struct Complex_Array_Tuple complex_out = {i_out, q_out};
+    return complex_out;
+}
+// Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
+struct Complex_Array_Tuple fft(struct Complex_Array_Tuple array){ //! Returns a calloc ptr
+    int N = array.real.length;
+    fftw_complex *in, *out;
+    fftw_plan p;
+    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
 
+    p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
+    // Populate input array with real and imaginary parts
+    for (int i = 0; i < N; i++) {
+        in[i][0] = array.real.array[i]; // Real part
+        in[i][1] = array.imaginary.array[i]; // Imaginary part
+    }
+    // Execute FFT
+    fftw_execute(p);
 
+    // Execute FFT
+    fftw_execute(p);
 
+    // Store output in the provided struct
+    double* result_real;
+    result_real = (double*) calloc(N, sizeof(double));
+    double* result_imaginary;
+    result_imaginary = (double*) calloc(N, sizeof(double));
 
+    // Extract real and imaginary parts from output
+    for (int i = 0; i < N; i++) {
+        result_real[i] = out[i][0]; // Real part
+        result_imaginary[i] = out[i][1]; // Imaginary part
+    }
 
+    // Free memory and destroy plan
+    fftw_destroy_plan(p);
+    fftw_free(in);
+    fftw_free(out);
 
+    struct Array_Tuple real_out = {result_real, N};
+    struct Array_Tuple imaj_out = {result_imaginary, N};
+    struct Complex_Array_Tuple out_struct = {real_out, imaj_out};
+    return out_struct;
+}
+
+struct Array_Tuple absComplexArray(struct Complex_Array_Tuple array){ //! Returns a calloc ptr
+    
+    // Store output in the provided struct
+    double* result;
+    result = (double*) calloc(array.real.length, sizeof(double));
+    // Extract real and imaginary parts from output
+    for (int i = 0; i < array.real.length; i++) {
+        double real = array.real.array[i];
+        double imaginary = array.imaginary.array[i];
+        result[i] = sqrt(real * real + imaginary * imaginary);
+    }
+
+    struct Array_Tuple out = {result, array.real.length};
+    return out;
+}
+int argMax(struct Array_Tuple input){
+    int max_index = -1;
+    int max_value = INT_MIN;
+    // Extract real and imaginary parts from output
+    for (int i = 0; i < input.length; i++) {
+        if (input.array[i] > max_value){
+            max_value = input.array[i];
+            max_index = i;
+        }
+    }
+    return max_index;
+}
+
+// Function to perform FFT shift along a single dimension
+struct Array_Tuple fftshift(struct Array_Tuple data) { //! Returns a calloc ptr
+    double temp;
+    // Calculate the midpoint of the array
+    int midpoint = data.length / 2;
+    double* output;
+    output = (double*) calloc(midpoint*2, sizeof(double));
+    // Perform the shift
+    for (int i = 0; i < midpoint; i++) {
+        temp = data.array[i];
+        output[i] = data.array[i + midpoint];
+        output[i + midpoint] = temp;
+    }
+
+    struct Array_Tuple out = {output, midpoint*2};
+    return out;
+}
+
+struct Complex_Array_Tuple complexfftshift(struct Complex_Array_Tuple input) { //! Returns two calloc ptrs from fft_shift
+    // Perform FFT shift on both real and imaginary parts
+    
+    struct Array_Tuple real = fftshift(input.real);
+    struct Array_Tuple imag = fftshift(input.imaginary);
+    struct Complex_Array_Tuple out = {real, imag};
+    return out;
+}
 
 
 

@@ -2,9 +2,10 @@
 // Rylan Paul
 
 // CRC_xor 
+#define MAX_ARRAY_LENGTH 1024
 struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_array){
     int length = b_array.length;
-    static double out_array[1024]; // Assuming maximum length of the array
+    static double out_array[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     for (int i = 1; i < length; i++){
         double element1 = a_array.array[i];
         double element2 = b_array.array[i];
@@ -20,7 +21,7 @@ struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_arra
 // CRC_mod2div
 struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_Tuple divisor_array){
     int pick = divisor_array.length;
-    static double temp[1024]; // Assuming maximum length of the array
+    static double temp[MAX_ARRAY_LENGTH]; // Assuming maximum length of the array
     
     for (int i=0; i < pick; i++){
         temp[i] = dividend_array.array[i];

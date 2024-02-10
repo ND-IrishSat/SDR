@@ -7,6 +7,21 @@ Rylan Paul
 Notes:
 - For memory leaks, every function that returns a pointer using malloc() or calloc(), mark with //! Returns a calloc ptr
             - For those using vscode, install the better comments extension, then you will see comments starting with --> ! <-- in bright red
+
+
+Funtcions to add:
+- np.sinc
+- np.hamming
+- np.sum
+- np.convolve
+- signal.resample_poly
+- signal.upfirdn
+- np.mean
+- signal.fftconvolve
+- demod.symbol_demod
+- CRC.CRCcheck (double check this works)
+- pulse_shaping.pulse_shaping
+
 */
 
 #include <stdio.h>
@@ -16,16 +31,23 @@ Notes:
 #include <stdbool.h>
 
 // Our libraries --------------------------------
-#include "standardArray.h"
+#include "standardArray.h" //#include <fftw3.h> //link flag -lfftw3, run: brew install fftw // to install library
 #include "CRC.h"
 #include "iq_imbalance.h"
 //-----------------------------------------------
 
 void encodepacket();
 
-
 int main(){
-    encodepacket();
+    struct Array_Tuple real = defineArray((double[]){-0.1, 0.4, -0.5, -0.2, 0.1, -0.3, -6, -0.6, 0.1, -0.4}, 10);
+    struct Array_Tuple imaj = defineArray((double[]){0.5, 0.6, -0.7, -0.3, 0.1, 0.9, 5.1, 1.1, -0.1, 0.2}, 10);
+    struct Complex_Array_Tuple complex = {real, imaj};
+    struct Array_Tuple outa = arange(-5.1, 5, 2);
+    printArray("Arange", outa.array, outa.length);
+    struct Array_Tuple outl = linspace(-5, 10, 20);
+    printArray("Linspace", outl.array, outl.length);
+    //printComplexArray("fft", out.real.array, out.imaginary.array, out.real.length);
+    //encodepacket();
     return 0;
 }
 
@@ -55,11 +77,11 @@ void encodepacket(){
 
     struct Array_Tuple pulse_train = pulsetrain(bits, sps);
     
-    struct Array_Tuple testpacket = pulse_shape(pulse_train, sps, fs, pulse_shape, alpha, L);
+    //struct Array_Tuple testpacket = pulse_shape(pulse_train, sps, fs, pulse_shape, alpha, L);
 
     // Noise simulation ----------------------------
-    struct Array_Tuple testpacket_noise = generateNoise(testpacket);
-    printArray("T", testpacket_noise.array, testpacket_noise.length);
+    //struct Array_Tuple testpacket_noise = generateNoise(testpacket);
+    //printArray("T", testpacket_noise.array, testpacket_noise.length);
     // ---------------------------------------------
     return;
 }

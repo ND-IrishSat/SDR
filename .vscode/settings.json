@@ -7,6 +7,14 @@
         "array": "c",
         "random": "c",
         "charconv": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "__bit_reference": "c",
+        "unordered_map": "c",
+        "algorithm": "c",
+        "format": "c",
+        "complex": "c",
+        "ios": "c",
+        "span": "cpp",
+        "vector": "cpp"
     }
 }
