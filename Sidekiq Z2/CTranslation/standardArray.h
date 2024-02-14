@@ -7,13 +7,13 @@
 //? Question
 //TODO
 //
-
 #include <string.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fftw3.h>
+
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, double* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -43,8 +43,6 @@ void printComplexArray(char *string, double* arr, double* imag_arr, int length){
     }
     printf(" ]\n");
 }
-
-
 
 // Array Tuple that keeps track of the length of the array and a pointer to the array
 struct Array_Tuple {
@@ -79,7 +77,8 @@ struct Array_Tuple defineArray(double array[], int length){ //! Returns a calloc
     struct Array_Tuple tuple = {ptr, length};
     return tuple;
 }
-double meanArray(double* array, int length){ // returns a pointer to an integer array
+// gets the average of an array
+double meanArray(double* array, int length){
     double sum = 0;
     for (int i = 0; i < length; i++)
     {
@@ -179,7 +178,7 @@ double rand_norm(double mu, double sigma){
 }
 
 //np.arange creates an array from start to end (exclusive) by a step
-struct Array_Tuple arange(double start, double end, double step){
+struct Array_Tuple arange(double start, double end, double step){ //! Returns a calloc ptr
     int length = 0;
     static double array[2048];
     double num = start;
@@ -200,7 +199,7 @@ struct Array_Tuple arange(double start, double end, double step){
 }
 
 //np.linspace creates an array from start to end with x number of points defined by length
-struct Array_Tuple linspace(double start, double end, double length){
+struct Array_Tuple linspace(double start, double end, double length){ //! Returns a calloc ptr
     double* out_array;
     out_array = (double*)calloc(length, sizeof(double));
     double step = (end - start) / (length-1);
@@ -215,6 +214,112 @@ struct Array_Tuple linspace(double start, double end, double length){
     return out;
 }
 
+struct Array_Tuple addArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.length;
+    if (b.length > length){
+        length = b.length;
+    }
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        double sum = 0;
+        if (i < a.length){
+            sum += a.array[i];
+        }
+        if (i < b.length){
+            sum += b.array[i];
+        }
+        output[i] = sum;
+    }
+    struct Array_Tuple out = {output, length};
+    return out;
+}
+struct Array_Tuple subtractArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.length;
+    if (b.length > length){
+        length = b.length;
+    }
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        double sum = 0;
+        if (i < a.length){
+            sum += a.array[i];
+        }
+        if (i < b.length){
+            sum -= b.array[i];
+        }
+        output[i] = sum;
+    }
+    struct Array_Tuple out = {output, length};
+    return out;
+}
+struct Array_Tuple multiplyArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.length;
+    if (b.length < length){
+        length = b.length;
+    }
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        output[i] = a.array[i] * b.array[i];
+    }
+    struct Array_Tuple out = {output, length};
+    return out;
+}
+struct Array_Tuple divideArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.length;
+    if (b.length < length){
+        length = b.length;
+    }
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        if (b.array[i] != 0){
+            output[i] = a.array[i] / b.array[i];
+        } else {
+            output[i] = INT_MAX;
+        }
+    }
+    struct Array_Tuple out = {output, length};
+    return out;
+}
+
+//same as np.sinc, does sin(pi * x) / (pi * x), but lim x-> 0 = 1, so if x=0 return 1
+struct Array_Tuple sinc(struct Array_Tuple input){ //! Returns a calloc ptr
+    double* ptr;
+    ptr = (double*)calloc(input.length, sizeof(double));
+
+    for (int i = 0; i < input.length; i++)
+    {
+        double x = input.array[i];
+        if (x != 0){ // dont wanna ÷ by zero
+            ptr[i] = sin(M_PI * x) / (M_PI * x);
+        } else {
+            ptr[i] = 1; // lim x->0 = 1
+        }
+    }
+    
+    struct Array_Tuple out = {ptr, input.length};
+    return out;
+}
+//np.sum Adds them all together
+double sumArray(struct Array_Tuple input){
+    double result = 0;
+    for (int i = 0; i < input.length; i++)
+    {
+        result += input.array[i];
+    }
+    return result;
+}
 // Takes a bit array and converts it to a pulse train from -1 to 1 with sps-1 zeros between each bit
 struct Array_Tuple pulsetrain(struct Array_Tuple bits, int sps){ //! Returns a calloc ptr
     double* array_ptr;
@@ -380,6 +485,7 @@ struct Array_Tuple fftshift(struct Array_Tuple data) { //! Returns a calloc ptr
     return out;
 }
 
+//fftshift for complex array
 struct Complex_Array_Tuple complexfftshift(struct Complex_Array_Tuple input) { //! Returns two calloc ptrs from fft_shift
     // Perform FFT shift on both real and imaginary parts
     
@@ -389,14 +495,60 @@ struct Complex_Array_Tuple complexfftshift(struct Complex_Array_Tuple input) { /
     return out;
 }
 
+//np.hamming
+struct Array_Tuple hamming(int M){ //! Returns a calloc ptr
+    double* output;
+    output = (double*) calloc(M, sizeof(double));
 
+    for (int i = 0; i < M; i++)
+    {
+        output[i] = 0.54 - 0.46 * cos((2 * M_PI * i)/(M - 1));
+    }
+    struct Array_Tuple out = {output, M};
+    return out;
+}
 
+//np.convolve: Circular Discrete Convolution --> https://en.wikipedia.org/wiki/Convolution
+struct Complex_Array_Tuple convolve(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
+    int N = a.real.length + v.length - 1;
+    double* output_real;
+    output_real = (double*) calloc(N, sizeof(double));
+    double* output_imaginary;
+    output_imaginary = (double*) calloc(N, sizeof(double));
 
+    // Perform convolution
+    for (int n = 0; n < N; n++) {
+        double sum_real = 0;
+        double sum_imaj = 0;
+        for (int M = 0; M < n+1; M++) {
+            if (n-M >= 0 && n-M < v.length && M < a.real.length){
+                sum_real += a.real.array[M] * v.array[n-M];
+                sum_imaj += a.imaginary.array[M] * v.array[n-M];
+            }
+        }
+        for (int M = n+1; M < N; M++)
+        {
+            if (n-M >= 0 && N+n-M < v.length && M < a.real.length){
+                sum_real += a.real.array[M] * v.array[N+n-M];
+                sum_imaj += a.imaginary.array[M] * v.array[N+n-M];
+            }
+        }
+        
+        output_real[n] = sum_real;
+        output_imaginary[n] = sum_imaj;
+    }
 
+    struct Array_Tuple real_out = {output_real, N };
+    struct Array_Tuple imaj_out = {output_imaginary, N};
+    struct Complex_Array_Tuple out = {real_out, imaj_out};
+    return out;
+}
 
+//scipy.fftconvolve --> Ask isaac: almost same results as above convolve, just slightly off. By like e^-16. Worth rewriting?
+// struct Complex_Array_Tuple fftconvolve(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
 
+// }
 
-
-
-
-
+struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int upscale, int downscale){
+    
+}

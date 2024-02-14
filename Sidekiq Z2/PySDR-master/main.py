@@ -176,7 +176,7 @@ std_dev = 0.1   # Standard deviation of the Gaussian distribution
 num_samples = len(testpacket)
 
 awgn_complex_samples = (np.random.randn(num_samples) + 1j*np.random.randn(num_samples)) / np.sqrt(2)
-noise_power = 2
+noise_power = 10
 awgn_complex_samples /= np.sqrt(noise_power)
 #awgn_samples = np.random.normal(mean, std_dev, num_samples) #this is original noise func
 phase_noise_strength = 0.1
@@ -191,6 +191,7 @@ delay = 0.4 # fractional delay, in samples
 N = 21 # number of taps
 n = np.arange(-N//2, N//2) # ...-3,-2,-1,0,1,2,3...
 h = np.sinc(n - delay) # calc filter taps
+print(f"sinc: {n - delay}")
 h *= np.hamming(N) # window the filter to make sure it decays to 0 on both sides
 h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
 testpacket = np.convolve(testpacket, h) # apply filter
@@ -241,7 +242,7 @@ https://wirelesspi.com/phase-locked-loop-pll-for-symbol-timing-recovery/
 """
 
 samples_interpolated = signal.resample_poly(testpacket, 16, 1)
-
+print(f"samp: {samples_interpolated}")
 plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
 plt.title("After interpolation")
 plt.legend(loc="upper left")
@@ -291,8 +292,6 @@ fft_samples = testpacket**2
 
 psd = np.fft.fftshift(np.abs(np.fft.fft(fft_samples)))
 f = np.linspace(-fs/2.0, fs/2.0, len(psd))
-
-print(f"psd: {psd}")
 
 max_freq = f[np.argmax(psd)]
 Ts = 1/fs # calc sample period
@@ -416,7 +415,6 @@ for symbol in testpacket:
     out = np.append(out, symbol)
 
 crosscorr = signal.fftconvolve(out,matched_filter_coef)
-
 plt.stem(np.real(testpacket), label="Recovered Waveform")
 plt.stem(preamble, 'r', label="Preamble Sequence")
 plt.stem(crosscorr, 'g', label="Crosscorrelation")

@@ -40,12 +40,11 @@ void encodepacket();
 
 int main(){
     struct Array_Tuple real = defineArray((double[]){-0.1, 0.4, -0.5, -0.2, 0.1, -0.3, -6, -0.6, 0.1, -0.4}, 10);
-    struct Array_Tuple imaj = defineArray((double[]){0.5, 0.6, -0.7, -0.3, 0.1, 0.9, 5.1, 1.1, -0.1, 0.2}, 10);
+    struct Array_Tuple imaj = defineArray((double[]){0, 0.6, -0.7, -0.3, 0.1, 0.9, 5.1, 1.1, -0.1, 0.2}, 10);
+    struct Array_Tuple bits = defineArray((double[]){1,0,0,0,0,1,1,1,0,1,0,1,0}, 13);
     struct Complex_Array_Tuple complex = {real, imaj};
-    struct Array_Tuple outa = arange(-5.1, 5, 2);
-    printArray("Arange", outa.array, outa.length);
-    struct Array_Tuple outl = linspace(-5, 10, 20);
-    printArray("Linspace", outl.array, outl.length);
+    struct Complex_Array_Tuple out = fftconvolve(complex, bits);
+    printComplexArray("Convolve", out.real.array, out.imaginary.array, out.real.length);
     //printComplexArray("fft", out.real.array, out.imaginary.array, out.real.length);
     //encodepacket();
     return 0;

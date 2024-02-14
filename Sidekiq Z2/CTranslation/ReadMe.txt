@@ -22,14 +22,17 @@ Report: 2/8/2024
 Report: 2/10/2024
 - I've now added np.linspace, np.arange, np.fft.fftshift, np.fft.fft, np.abs
 - Reorganization and abstraction in everything is still needed
-        - np.sinc
-        - np.hamming
-        - np.sum
-        - np.convolve
+  DONE  - np.sinc
+  DONE  - np.hamming
+  DONE  - np.sum
+  DONE  - add arrays
+  DONE  - subtract arrays
+  DONE  - multiply arrays
+  DONE  - divide arrays
+  DONE  - np.mean
+  DONE  - np.convolve
         - signal.resample_poly
-        - signal.upfirdn
-        - np.mean
-        - scipy.signal.fftconvolve
+  np.convolve instead - scipy.signal.fftconvolve
         - demod.symbol_demod
         - CRC.CRCcheck (double check this works)
         - pulse_shaping.pulse_shaping
