@@ -15,6 +15,11 @@
         "complex": "c",
         "ios": "c",
         "span": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "limits": "c",
+        "ratio": "c",
+        "semaphore": "c",
+        "chrono": "c",
+        "numbers": "c"
     }
 }

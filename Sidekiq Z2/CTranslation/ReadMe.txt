@@ -30,8 +30,10 @@ Report: 2/10/2024
   DONE  - multiply arrays
   DONE  - divide arrays
   DONE  - np.mean
-  DONE  - np.convolve
-        - signal.resample_poly
+  DONE  - np.convolve(mode="full")
+  DONE  - np.convolve(mode="same")
+  DONE  - signal.resample_poly
+  DONE  - signal.firwin
   np.convolve instead - scipy.signal.fftconvolve
         - demod.symbol_demod
         - CRC.CRCcheck (double check this works)

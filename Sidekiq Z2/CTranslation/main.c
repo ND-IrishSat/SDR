@@ -43,8 +43,8 @@ int main(){
     struct Array_Tuple imaj = defineArray((double[]){0, 0.6, -0.7, -0.3, 0.1, 0.9, 5.1, 1.1, -0.1, 0.2}, 10);
     struct Array_Tuple bits = defineArray((double[]){1,0,0,0,0,1,1,1,0,1,0,1,0}, 13);
     struct Complex_Array_Tuple complex = {real, imaj};
-    struct Complex_Array_Tuple out = fftconvolve(complex, bits);
-    printComplexArray("Convolve", out.real.array, out.imaginary.array, out.real.length);
+    struct Complex_Array_Tuple out = resample_poly(complex, 16, 1);
+    printComplexArray("Resample Poly", out.real.array, out.imaginary.array, out.real.length);
     //printComplexArray("fft", out.real.array, out.imaginary.array, out.real.length);
     //encodepacket();
     return 0;

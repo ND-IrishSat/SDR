@@ -14,6 +14,14 @@
 #include <stdio.h>
 #include <fftw3.h>
 
+// checks if double is an integer
+bool isInteger(double val)
+{
+    int truncated = (int)val;
+    return (val == truncated);
+}
+
+
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, double* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -147,6 +155,22 @@ struct Complex_Array_Tuple exp_array(struct Complex_Array_Tuple array) //! Retur
     struct Array_Tuple imag = {imag_ptr, array.imaginary.length};
     struct Complex_Array_Tuple out = {real, imag};
     return out;
+}
+
+//returns the maximum abs of complex array
+double maxAbsoluteValue(struct Complex_Array_Tuple a){
+    double max_sqr = -99;
+    for (int i = 0; i < a.real.length; i++)
+    {
+        double x = a.real.array[i];
+        double y = a.imaginary.array[i];
+        double sqr = x*x + y*y;
+        if (sqr > max_sqr){
+            max_sqr = sqr;
+        }
+    }
+    return sqrt(max_sqr);
+    
 }
 
 // returns a random number with a normal distribution
@@ -544,11 +568,156 @@ struct Complex_Array_Tuple convolve(struct Complex_Array_Tuple a, struct Array_T
     return out;
 }
 
+struct Complex_Array_Tuple convolveSame(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
+    int N = a.real.length + v.length - 1;
+    double* output_real;
+    output_real = (double*) calloc(N, sizeof(double));
+    double* output_imaginary;
+    output_imaginary = (double*) calloc(N, sizeof(double));
+
+    // Perform convolution
+    for (int n = 0; n < N; n++) {
+        double sum_real = 0;
+        double sum_imaj = 0;
+        for (int M = 0; M < n+1; M++) {
+            if (n-M >= 0 && n-M < v.length && M < a.real.length){
+                sum_real += a.real.array[M] * v.array[n-M];
+                sum_imaj += a.imaginary.array[M] * v.array[n-M];
+            }
+        }
+        for (int M = n+1; M < N; M++)
+        {
+            if (n-M >= 0 && N+n-M < v.length && M < a.real.length){
+                sum_real += a.real.array[M] * v.array[N+n-M];
+                sum_imaj += a.imaginary.array[M] * v.array[N+n-M];
+            }
+        }
+        output_real[n] = sum_real;
+        output_imaginary[n] = sum_imaj;
+    }
+    // remove difference/2 from both sides, this is what makes it different than np.convolve(mode='full')
+    int output_length = a.real.length > v.length ? a.real.length : v.length;
+    double* shortened_real;
+    shortened_real = (double*) calloc(N, sizeof(double));
+    double* shortened_imaj;
+    shortened_imaj = (double*) calloc(N, sizeof(double));
+    
+    int difference = abs(N - output_length);
+    double remove = (double)difference / 2.0;
+
+    if (isInteger(remove)){
+        for (int i = 0; i < output_length; i++)
+        {
+            shortened_real[i] = output_real[(int)remove + i];
+            shortened_imaj[i] = output_imaginary[(int)remove + i];
+        }
+    } else {
+        for (int i = 0; i < output_length; i++)
+        {
+            shortened_real[i] = output_real[(int)floor(remove) + i];
+            shortened_imaj[i] = output_imaginary[(int)floor(remove) + i];
+        }
+    }
+
+    
+
+    struct Array_Tuple real_out = {shortened_real, output_length };
+    struct Array_Tuple imaj_out = {shortened_imaj, output_length};
+    struct Complex_Array_Tuple out = {real_out, imaj_out};
+    free(output_real);
+    free(output_imaginary);
+    return out;
+}
+struct Array_Tuple firwin(int M, double cutoff){ //! Returns a calloc ptr
+
+    double* output = (double*)calloc(M+1, sizeof(double));
+    //scipy.signal.firwin
+    for (int i = 0; i < M; i++)
+    {
+        double window = (0.54 - 0.46 * cos(2 * M_PI * i / M));
+        
+        double lowpassfilter = cutoff; // limit of sin(cutoff * M_PI * (i - M/2)) / (M_PI * (i - M/2)) as (i-M/2) --> 0 = cutoff
+        if (i - M/2 != 0){
+            lowpassfilter = sin(cutoff * M_PI * (i - M/2)) / (M_PI * (i - M/2));
+        }
+        output[i] = window * lowpassfilter;
+    }
+    
+    struct Array_Tuple out = {output, M};
+    return out;
+}
 //scipy.fftconvolve --> Ask isaac: almost same results as above convolve, just slightly off. By like e^-16. Worth rewriting?
 // struct Complex_Array_Tuple fftconvolve(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
 
 // }
+// same as scipy.resample_poly which upsamples an array of data, can also specify a down sample
+struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, int down){
+    // upsample by factor of up
+    double* upsampled_real = (double*)calloc(a.real.length * up, sizeof(double));
+    double* upsampled_imaj = (double*)calloc(a.real.length * up, sizeof(double));
+    int index = 0;
+    for (int i = 0; i < a.real.length * up; i++)
+    {
+        if (i % up == 0){
+            upsampled_real[i] = a.real.array[index];
+            upsampled_imaj[i] = a.imaginary.array[index];
+            index ++;
+        }
+        else {
+            upsampled_real[i] = 0;
+            upsampled_imaj[i] = 0;
+        }
+    }
+    int greaterUpDown = (up >= down ? up : down);
+    int filter_length = 10 * greaterUpDown;
 
-struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int upscale, int downscale){
+    struct Array_Tuple filterCoeff = firwin(filter_length, 1.0 / (double)greaterUpDown);
+    struct Array_Tuple up_real = {upsampled_real, a.real.length * up};
+    struct Array_Tuple up_imaj = {upsampled_imaj, a.real.length * up};
+    struct Complex_Array_Tuple up_complex = {up_real, up_imaj};
+    
+
+    struct Complex_Array_Tuple smoothed = convolveSame(up_complex, filterCoeff);
+    //printArray("smoothed", smoothed.real.array, smoothed.real.length);
+    int down_length = smoothed.real.length / down;
+    double* down_real = (double*)calloc(down_length, sizeof(double)); //! can make these static
+    double* down_imaj = (double*)calloc(down_length, sizeof(double));
+    index = 0;
+    double max_abs_value_sqr = -99;
+    for (int i = 0; i < smoothed.real.length; i++)
+    {
+        if (i % down == 0){
+            double x = smoothed.real.array[i];
+            double y = smoothed.imaginary.array[i];
+            double abs_value_sqr = x*x + y*y;
+            down_real[index] = x;
+            down_imaj[index] = y;
+            index ++;
+            if (abs_value_sqr > max_abs_value_sqr){
+                max_abs_value_sqr = abs_value_sqr;
+            }
+        }
+    }
+
+    // normalize output then scale to input scale
+    double* out_real = (double*)calloc(down_length, sizeof(double));
+    double* out_imaj = (double*)calloc(down_length, sizeof(double));
+    double max_abs_input = maxAbsoluteValue(a);
+    for (int i = 0; i < down_length; i++)
+    {
+        out_real[i] = down_real[i] / sqrt(max_abs_value_sqr) * max_abs_input;
+        out_imaj[i] = down_imaj[i] / sqrt(max_abs_value_sqr) * max_abs_input;
+    }
+    
+    struct Array_Tuple real_out = {out_real, down_length};
+    struct Array_Tuple imaj_out = {out_imaj, down_length};
+    struct Complex_Array_Tuple complex_out = {real_out, imaj_out};
+
+    free(upsampled_real);
+    free(upsampled_imaj);
+    free(down_real);
+    free(down_imaj);
+
+    return complex_out;
     
 }
