@@ -478,6 +478,7 @@ struct Array_Tuple absComplexArray(struct Complex_Array_Tuple array){ //! Return
     struct Array_Tuple out = {result, array.real.length};
     return out;
 }
+
 int argMax(struct Array_Tuple input){
     int max_index = -1;
     int max_value = INT_MIN;
@@ -656,6 +657,7 @@ struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, i
     double* upsampled_real = (double*)calloc(a.real.length * up, sizeof(double));
     double* upsampled_imaj = (double*)calloc(a.real.length * up, sizeof(double));
     int index = 0;
+    // upsample the input
     for (int i = 0; i < a.real.length * up; i++)
     {
         if (i % up == 0){
@@ -713,11 +715,46 @@ struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, i
     struct Array_Tuple imaj_out = {out_imaj, down_length};
     struct Complex_Array_Tuple complex_out = {real_out, imaj_out};
 
+    // free all temp arrays
     free(upsampled_real);
     free(upsampled_imaj);
     free(down_real);
     free(down_imaj);
+    free(filterCoeff.array);
+    free(smoothed.real.array);
+    free(smoothed.imaginary.array);
 
     return complex_out;
-    
 }
+
+void exportArray(struct Array_Tuple input, char filename[]){
+    FILE *fpt;
+    fpt = fopen(filename, "w+");
+    for (int i = 0; i < input.length; i++)
+    {
+        fprintf(fpt, "%lf", input.array[i]);
+        if (i != input.length-1){
+            fprintf(fpt, "\n");
+        }
+    }
+    fclose(fpt);
+}
+
+void exportComplexArray(struct Complex_Array_Tuple input, char filename[]){
+    FILE *fpt;
+    fpt = fopen(filename, "w+");
+    for (int i = 0; i < input.real.length; i++)
+    {
+        if (input.imaginary.array[i] < 0){
+            fprintf(fpt, "%lf%lfj", input.real.array[i], input.imaginary.array[i]);
+        }else {
+            fprintf(fpt, "%lf+%lfj", input.real.array[i], input.imaginary.array[i]);
+        }
+        
+        if (i != input.real.length-1){
+            fprintf(fpt, "\n");
+        }
+    }
+    fclose(fpt);
+}
+
