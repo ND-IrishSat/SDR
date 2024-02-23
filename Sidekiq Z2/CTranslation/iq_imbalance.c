@@ -3,7 +3,7 @@
 
 
 // gets the average of every value within the period
-struct Array_Tuple averages(struct Array_Tuple array, int period){ //! Returns a calloc ptr
+Array_Tuple averages(Array_Tuple array, int period){ //! Returns a calloc ptr
     double* means;
     means = (double*)calloc(array.length, sizeof(double));
     for (int index = 0; index < array.length; index++)
@@ -29,26 +29,26 @@ struct Array_Tuple averages(struct Array_Tuple array, int period){ //! Returns a
         }
         means[index] = sum / num;
     }
-    struct Array_Tuple out = {means, array.length};
+    Array_Tuple out = {means, array.length};
     return out;
 }
 
 // Code for IQImbalance Correction
-struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet, int mean_period) //! Returns 2 calloc ptrs 
+Complex_Array_Tuple IQImbalanceCorrect(Complex_Array_Tuple packet, int mean_period) //! Returns 2 calloc ptrs 
 {
     // This follows the formula shown by the matrix in this article:
     // https://www.faculty.ece.vt.edu/swe/argus/iqbal.pdf
 
     // divide into real and complex
     /* data */
-    struct Array_Tuple I = {packet.real.array, packet.real.length}; // real
-    struct Array_Tuple Q = {packet.imaginary.array, packet.imaginary.length}; // imag
+    Array_Tuple I = {packet.real.array, packet.real.length}; // real
+    Array_Tuple Q = {packet.imaginary.array, packet.imaginary.length}; // imag
 
     // I(t) = α cos (ωt) + βI
     // Q(t) = sin (ωt + ψ) + βQ
     // BI and BQ are simply the mean over X periods of I or Q, this value can be subtracted to remove
-    struct Array_Tuple BI = averages(I, mean_period);
-    struct Array_Tuple BQ = averages(Q, mean_period);
+    Array_Tuple BI = averages(I, mean_period);
+    Array_Tuple BQ = averages(Q, mean_period);
     double I_second[I.length];
     for (int i = 0; i < I.length; i++){
         I_second[i] = I.array[i] - BI.array[i];
@@ -89,8 +89,8 @@ struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet,
     free(BQ.array);
     free(I_second_squared); // both temp arrays
     free(I_times_Q_second);
-    struct Array_Tuple I_out = {I_final, I.length};
-    struct Array_Tuple Q_out = {Q_final, Q.length};
-    struct Complex_Array_Tuple out = {I_out, Q_out};
+    Array_Tuple I_out = {I_final, I.length};
+    Array_Tuple Q_out = {Q_final, Q.length};
+    Complex_Array_Tuple out = {I_out, Q_out};
     return out;
 }

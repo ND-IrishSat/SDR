@@ -4,5 +4,5 @@ Rylan Paul
 */
 #include "iq_imbalance.c"
 
-void mean(struct Array_Tuple array, int period);
-struct Complex_Array_Tuple IQImbalanceCorrect(struct Complex_Array_Tuple packet, int mean_period);
+void mean(Array_Tuple array, int period);
+Complex_Array_Tuple IQImbalanceCorrect(Complex_Array_Tuple packet, int mean_period);

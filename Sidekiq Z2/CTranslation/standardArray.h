@@ -21,7 +21,6 @@ bool isInteger(double val)
     return (val == truncated);
 }
 
-
 // Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
 void printArray(char *string, double* arr, int length){
     for (int i = 0; i < strlen(string); i++) {
@@ -53,23 +52,23 @@ void printComplexArray(char *string, double* arr, double* imag_arr, int length){
 }
 
 // Array Tuple that keeps track of the length of the array and a pointer to the array
-struct Array_Tuple {
+typedef struct Array_Tuple {
     double* array;
     int length;
-};
+}Array_Tuple;
 //
-struct Complex_Array_Tuple {
-    struct Array_Tuple real;
-    struct Array_Tuple imaginary;
-};
+typedef struct Complex_Array_Tuple {
+    Array_Tuple real;
+    Array_Tuple imaginary;
+}Complex_Array_Tuple;
 
 // Pass in an Array_Tuple and it will free the memory from that pointer, this only needs to be done on pointers that use the calloc() and malloc() functions
-void freeArrayMemory(struct Array_Tuple array){
+void freeArrayMemory(Array_Tuple array){
     free(array.array);
     return;
 }
 // Creates an Array_Tuple from a known array {1,1,1,0,...} and its known length
-struct Array_Tuple defineArray(double array[], int length){ //! Returns a calloc ptr
+Array_Tuple defineArray(double array[], int length){ //! Returns a calloc ptr
     
     double* ptr;
     ptr = (double*)calloc(length, sizeof(double));
@@ -82,7 +81,42 @@ struct Array_Tuple defineArray(double array[], int length){ //! Returns a calloc
         ptr[i] = array[i];
     }
     
-    struct Array_Tuple tuple = {ptr, length};
+    Array_Tuple tuple = {ptr, length};
+    return tuple;
+}
+
+// Creates an Complex_Array_Tuple length {0,0,0,0,0} and its known length
+Complex_Array_Tuple zerosComplex(int length){ //! Returns a calloc ptr
+    
+    double* real;
+    real = (double*)calloc(length, sizeof(double));
+    double* imaj;
+    imaj = (double*)calloc(length, sizeof(double)); // initialized to zero
+    
+    Array_Tuple real_t = {real, length};
+    Array_Tuple imaj_t = {imaj, length};
+    Complex_Array_Tuple tuple = {real_t, imaj_t};
+    return tuple;
+}
+
+// Creates an Complex_Array_Tuple of complex conjugates of the input -> np.conj
+Complex_Array_Tuple conj(Complex_Array_Tuple input){ //! Returns a calloc ptr
+    int length = input.real.length;
+    double* real;
+    real = (double*)calloc(length, sizeof(double));
+    double* imaj;
+    imaj = (double*)calloc(length, sizeof(double)); // initialized to zero
+
+    for (int i = 0; i < length; i++)
+    {
+        real[i] = input.real.array[i];
+        imaj[i] = -input.imaginary.array[i];
+    }
+    
+    
+    Array_Tuple real_t = {real, length};
+    Array_Tuple imaj_t = {imaj, length};
+    Complex_Array_Tuple tuple = {real_t, imaj_t};
     return tuple;
 }
 // gets the average of an array
@@ -106,7 +140,7 @@ double * randomArray(int max_exclusive, int length){ //! Returns a calloc ptr
     return arr; // to use this: int *array; array= randomArray(2,size);
 }
 
-struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+Array_Tuple append_array(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
     int length = a.length + b.length;
     double* ptr;
     ptr = (double*)calloc(length, sizeof(double));
@@ -118,24 +152,24 @@ struct Array_Tuple append_array(struct Array_Tuple a, struct Array_Tuple b){ //!
     {
         ptr[a.length+i] = b.array[i];
     }
-    struct Array_Tuple t = {ptr, length};
+    Array_Tuple t = {ptr, length};
     return t; //once done, must free memory of ptr
 }
 
 // reverses the order of an array
-struct Array_Tuple flip(struct Array_Tuple a){ //! Returns a calloc ptr
+Array_Tuple flip(Array_Tuple a){ //! Returns a calloc ptr
     double* ptr;
     ptr = (double*)calloc(a.length, sizeof(double));
     for (int i = 0; i < a.length; i++)
     {
         ptr[i] = a.array[a.length-1-i];
     }
-    struct Array_Tuple t = {ptr, a.length};
+    Array_Tuple t = {ptr, a.length};
     return t; //once done, must free memory of ptr
 }
 
 // Raises e to the element of every complex number in an array --> np.exp()
-struct Complex_Array_Tuple exp_array(struct Complex_Array_Tuple array) //! Returns a calloc ptr
+Complex_Array_Tuple exp_array(Complex_Array_Tuple array) //! Returns a calloc ptr
 {
     // Euler's stuff: e to the power of a complex number -- cool!
     double e = M_E;
@@ -151,14 +185,36 @@ struct Complex_Array_Tuple exp_array(struct Complex_Array_Tuple array) //! Retur
         imag_ptr[i] = power_num * sin(array.imaginary.array[i]);
         /* code */
     }
-    struct Array_Tuple real = {real_ptr, array.real.length};
-    struct Array_Tuple imag = {imag_ptr, array.imaginary.length};
-    struct Complex_Array_Tuple out = {real, imag};
+    Array_Tuple real = {real_ptr, array.real.length};
+    Array_Tuple imag = {imag_ptr, array.imaginary.length};
+    Complex_Array_Tuple out = {real, imag};
+    return out;
+}
+// Raises e to the element of every complex number in an array --> np.exp(), the input is 0+xj, where x is the input
+Complex_Array_Tuple exp_imaginaryArray(Array_Tuple array) //! Returns a calloc ptr
+{
+    // Euler's stuff: e to the power of a complex number -- cool!
+    double e = M_E;
+    double* real_ptr;
+    real_ptr = (double*)calloc(array.length, sizeof(double));
+    double* imag_ptr;
+    imag_ptr = (double*)calloc(array.length, sizeof(double));
+    for (int i = 0; i < array.length; i++)
+    {
+        double real = 0;
+        double power_num  = pow(e, real);
+        real_ptr[i] = power_num * cos(array.array[i]); // technically array.imag.array[i] * ln(a), where a^(b+ci), but a=e, so ln(e)=1
+        imag_ptr[i] = power_num * sin(array.array[i]);
+        /* code */
+    }
+    Array_Tuple real = {real_ptr, array.length};
+    Array_Tuple imag = {imag_ptr, array.length};
+    Complex_Array_Tuple out = {real, imag};
     return out;
 }
 
 //returns the maximum abs of complex array
-double maxAbsoluteValue(struct Complex_Array_Tuple a){
+double maxAbsoluteValue(Complex_Array_Tuple a){
     double max_sqr = -99;
     for (int i = 0; i < a.real.length; i++)
     {
@@ -202,7 +258,7 @@ double rand_norm(double mu, double sigma){
 }
 
 //np.arange creates an array from start to end (exclusive) by a step
-struct Array_Tuple arange(double start, double end, double step){ //! Returns a calloc ptr
+Array_Tuple arange(double start, double end, double step){ //! Returns a calloc ptr
     int length = 0;
     static double array[2048];
     double num = start;
@@ -218,12 +274,12 @@ struct Array_Tuple arange(double start, double end, double step){ //! Returns a 
         out_array[i] = array[i];
     }
     
-    struct Array_Tuple out = {out_array, length};
+    Array_Tuple out = {out_array, length};
     return out;
 }
 
 //np.linspace creates an array from start to end with x number of points defined by length
-struct Array_Tuple linspace(double start, double end, double length){ //! Returns a calloc ptr
+Array_Tuple linspace(double start, double end, double length){ //! Returns a calloc ptr
     double* out_array;
     out_array = (double*)calloc(length, sizeof(double));
     double step = (end - start) / (length-1);
@@ -234,11 +290,11 @@ struct Array_Tuple linspace(double start, double end, double length){ //! Return
         num += step;
     }
     
-    struct Array_Tuple out = {out_array, length};
+    Array_Tuple out = {out_array, length};
     return out;
 }
 
-struct Array_Tuple addArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+Array_Tuple addArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
     int length = a.length;
     if (b.length > length){
         length = b.length;
@@ -257,10 +313,10 @@ struct Array_Tuple addArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Re
         }
         output[i] = sum;
     }
-    struct Array_Tuple out = {output, length};
+    Array_Tuple out = {output, length};
     return out;
 }
-struct Array_Tuple subtractArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+Array_Tuple subtractArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
     int length = a.length;
     if (b.length > length){
         length = b.length;
@@ -279,10 +335,48 @@ struct Array_Tuple subtractArrays(struct Array_Tuple a, struct Array_Tuple b){ /
         }
         output[i] = sum;
     }
-    struct Array_Tuple out = {output, length};
+    Array_Tuple out = {output, length};
     return out;
 }
-struct Array_Tuple multiplyArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+Array_Tuple subtractDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
+    int length = a.length;
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        double sum = 0;
+        sum += a.array[i] - b;
+        output[i] = sum;
+    }
+    Array_Tuple out = {output, length};
+    return out;
+}
+Array_Tuple divideDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
+    int length = a.length;
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        output[i] = a.array[i] / b;
+    }
+    Array_Tuple out = {output, length};
+    return out;
+}
+Array_Tuple multiplyDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
+    int length = a.length;
+    double* output;
+    output = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        output[i] = a.array[i] * b;
+    }
+    Array_Tuple out = {output, length};
+    return out;
+}
+Array_Tuple multiplyArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
     int length = a.length;
     if (b.length < length){
         length = b.length;
@@ -294,10 +388,10 @@ struct Array_Tuple multiplyArrays(struct Array_Tuple a, struct Array_Tuple b){ /
     {
         output[i] = a.array[i] * b.array[i];
     }
-    struct Array_Tuple out = {output, length};
+    Array_Tuple out = {output, length};
     return out;
 }
-struct Array_Tuple divideArrays(struct Array_Tuple a, struct Array_Tuple b){ //! Returns a calloc ptr
+Array_Tuple divideArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
     int length = a.length;
     if (b.length < length){
         length = b.length;
@@ -313,12 +407,81 @@ struct Array_Tuple divideArrays(struct Array_Tuple a, struct Array_Tuple b){ //!
             output[i] = INT_MAX;
         }
     }
-    struct Array_Tuple out = {output, length};
+    Array_Tuple out = {output, length};
     return out;
+}
+// multiplies two complex arrays
+Complex_Array_Tuple multiplyComplexArrays(Complex_Array_Tuple x, Complex_Array_Tuple y){ //! Returns a calloc ptr
+    int length = x.real.length;
+    if (y.real.length < length){
+        length = y.real.length;
+    }
+    double* output_real;
+    output_real = (double*) calloc(length, sizeof(double));
+    double* output_imaj;
+    output_imaj = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        // (a+bi)*(c+di) = (ac-bd)+(ad+bc)i;
+        double a = x.real.array[i];
+        double b = x.imaginary.array[i];
+        double c = y.real.array[i];
+        double d = y.imaginary.array[i];
+        output_real[i] = a*c - b*d;
+        output_imaj[i] = a*d + b*c;
+    }
+    Array_Tuple out_real = {output_real, length};
+    Array_Tuple out_imaj = {output_imaj, length};
+    Complex_Array_Tuple out_tuple = {out_real, out_imaj};
+    return out_tuple;
+}
+// add two complex arrays together
+Complex_Array_Tuple addComplexArrays(Complex_Array_Tuple a, Complex_Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.real.length;
+    if (b.real.length > length){
+        length = b.real.length;
+    }
+    double* output_real;
+    output_real = (double*) calloc(length, sizeof(double));
+    double* output_imaj;
+    output_imaj = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        output_real[i] = a.real.array[i] + b.real.array[i];
+        output_imaj[i] = a.imaginary.array[i] + b.imaginary.array[i];
+    }
+    Array_Tuple out_real = {output_real, length};
+    Array_Tuple out_imaj = {output_imaj, length};
+    Complex_Array_Tuple out_tuple = {out_real, out_imaj};
+    return out_tuple;
+}
+
+// subtract two complex arrays
+Complex_Array_Tuple subtractComplexArrays(Complex_Array_Tuple a, Complex_Array_Tuple b){ //! Returns a calloc ptr
+    int length = a.real.length;
+    if (b.real.length > length){
+        length = b.real.length;
+    }
+    double* output_real;
+    output_real = (double*) calloc(length, sizeof(double));
+    double* output_imaj;
+    output_imaj = (double*) calloc(length, sizeof(double));
+
+    for (int i = 0; i < length; i++)
+    {
+        output_real[i] = a.real.array[i] - b.real.array[i];
+        output_imaj[i] = a.imaginary.array[i] - b.imaginary.array[i];
+    }
+    Array_Tuple out_real = {output_real, length};
+    Array_Tuple out_imaj = {output_imaj, length};
+    Complex_Array_Tuple out_tuple = {out_real, out_imaj};
+    return out_tuple;
 }
 
 //same as np.sinc, does sin(pi * x) / (pi * x), but lim x-> 0 = 1, so if x=0 return 1
-struct Array_Tuple sinc(struct Array_Tuple input){ //! Returns a calloc ptr
+Array_Tuple sinc(Array_Tuple input){ //! Returns a calloc ptr
     double* ptr;
     ptr = (double*)calloc(input.length, sizeof(double));
 
@@ -332,11 +495,11 @@ struct Array_Tuple sinc(struct Array_Tuple input){ //! Returns a calloc ptr
         }
     }
     
-    struct Array_Tuple out = {ptr, input.length};
+    Array_Tuple out = {ptr, input.length};
     return out;
 }
 //np.sum Adds them all together
-double sumArray(struct Array_Tuple input){
+double sumArray(Array_Tuple input){
     double result = 0;
     for (int i = 0; i < input.length; i++)
     {
@@ -345,7 +508,7 @@ double sumArray(struct Array_Tuple input){
     return result;
 }
 // Takes a bit array and converts it to a pulse train from -1 to 1 with sps-1 zeros between each bit
-struct Array_Tuple pulsetrain(struct Array_Tuple bits, int sps){ //! Returns a calloc ptr
+Array_Tuple pulsetrain(Array_Tuple bits, int sps){ //! Returns a calloc ptr
     double* array_ptr;
     int length = bits.length * sps;
     array_ptr = (double*)calloc(length, sizeof(double));
@@ -362,12 +525,12 @@ struct Array_Tuple pulsetrain(struct Array_Tuple bits, int sps){ //! Returns a c
         }
         offset += sps;
     }
-    struct Array_Tuple t = {array_ptr, length};
+    Array_Tuple t = {array_ptr, length};
     return t;
     
 }
 
-struct Complex_Array_Tuple generateNoise(struct Complex_Array_Tuple testpacket){ //! Returns a calloc ptr
+Complex_Array_Tuple generateNoise(Complex_Array_Tuple testpacket){ //! Returns a calloc ptr
     // vars
     int max = 1;
     double mean = 0;
@@ -384,19 +547,17 @@ struct Complex_Array_Tuple generateNoise(struct Complex_Array_Tuple testpacket){
     for (int i = 0; i < num_samples; i++)
     {
         double phase_noise = rand_norm(mean, std_dev) * phase_noise_strength;
-        awgn_comlpex_samples_real[i] = rand_norm(mean, std_dev) / sqrt(noise_power) * cos(phase_noise);
-        awgn_comlpex_samples_imag[i] = rand_norm(mean, std_dev) / sqrt(noise_power) * sin(phase_noise);
+        awgn_comlpex_samples_real[i] = (testpacket.real.array[i] + rand_norm(mean, std_dev) / sqrt(noise_power)) * cos(phase_noise);
+        awgn_comlpex_samples_imag[i] = (testpacket.imaginary.array[i] + rand_norm(mean, std_dev) / sqrt(noise_power)) * sin(phase_noise);
     }
 
-    struct Array_Tuple real = {awgn_comlpex_samples_real, num_samples};
-    struct Array_Tuple imag = {awgn_comlpex_samples_imag, num_samples};
-    struct Complex_Array_Tuple out = {real, imag};
+    Array_Tuple real = {awgn_comlpex_samples_real, num_samples};
+    Array_Tuple imag = {awgn_comlpex_samples_imag, num_samples};
+    Complex_Array_Tuple out = {real, imag};
     return out;
-    //awgn_comlpex_samples_real = ;
-    //awgn_comlpex_samples_imaginary = ;
 }
 
-struct Complex_Array_Tuple everyOtherElement(struct Complex_Array_Tuple array, int offset){ //! Returns a calloc ptr
+Complex_Array_Tuple everyOtherElement(Complex_Array_Tuple array, int offset){ //! Returns a calloc ptr
     if (offset >= 1){
         offset = 1;
     } else {
@@ -414,13 +575,13 @@ struct Complex_Array_Tuple everyOtherElement(struct Complex_Array_Tuple array, i
         l_index ++;
     }
     int N = (int)array.real.length / (int)2;
-    struct Array_Tuple i_out = {real, N};
-    struct Array_Tuple q_out = {imaginary, N};
-    struct Complex_Array_Tuple complex_out = {i_out, q_out};
+    Array_Tuple i_out = {real, N};
+    Array_Tuple q_out = {imaginary, N};
+    Complex_Array_Tuple complex_out = {i_out, q_out};
     return complex_out;
 }
 // Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
-struct Complex_Array_Tuple fft(struct Complex_Array_Tuple array){ //! Returns a calloc ptr
+Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
     int N = array.real.length;
     fftw_complex *in, *out;
     fftw_plan p;
@@ -457,13 +618,13 @@ struct Complex_Array_Tuple fft(struct Complex_Array_Tuple array){ //! Returns a 
     fftw_free(in);
     fftw_free(out);
 
-    struct Array_Tuple real_out = {result_real, N};
-    struct Array_Tuple imaj_out = {result_imaginary, N};
-    struct Complex_Array_Tuple out_struct = {real_out, imaj_out};
+    Array_Tuple real_out = {result_real, N};
+    Array_Tuple imaj_out = {result_imaginary, N};
+    Complex_Array_Tuple out_struct = {real_out, imaj_out};
     return out_struct;
 }
 
-struct Array_Tuple absComplexArray(struct Complex_Array_Tuple array){ //! Returns a calloc ptr
+Array_Tuple absComplexArray(Complex_Array_Tuple array){ //! Returns a calloc ptr
     
     // Store output in the provided struct
     double* result;
@@ -475,11 +636,11 @@ struct Array_Tuple absComplexArray(struct Complex_Array_Tuple array){ //! Return
         result[i] = sqrt(real * real + imaginary * imaginary);
     }
 
-    struct Array_Tuple out = {result, array.real.length};
+    Array_Tuple out = {result, array.real.length};
     return out;
 }
 
-int argMax(struct Array_Tuple input){
+int argMax(Array_Tuple input){
     int max_index = -1;
     int max_value = INT_MIN;
     // Extract real and imaginary parts from output
@@ -493,7 +654,7 @@ int argMax(struct Array_Tuple input){
 }
 
 // Function to perform FFT shift along a single dimension
-struct Array_Tuple fftshift(struct Array_Tuple data) { //! Returns a calloc ptr
+Array_Tuple fftshift(Array_Tuple data) { //! Returns a calloc ptr
     double temp;
     // Calculate the midpoint of the array
     int midpoint = data.length / 2;
@@ -506,22 +667,22 @@ struct Array_Tuple fftshift(struct Array_Tuple data) { //! Returns a calloc ptr
         output[i + midpoint] = temp;
     }
 
-    struct Array_Tuple out = {output, midpoint*2};
+    Array_Tuple out = {output, midpoint*2};
     return out;
 }
 
 //fftshift for complex array
-struct Complex_Array_Tuple complexfftshift(struct Complex_Array_Tuple input) { //! Returns two calloc ptrs from fft_shift
+Complex_Array_Tuple complexfftshift(Complex_Array_Tuple input) { //! Returns two calloc ptrs from fft_shift
     // Perform FFT shift on both real and imaginary parts
     
-    struct Array_Tuple real = fftshift(input.real);
-    struct Array_Tuple imag = fftshift(input.imaginary);
-    struct Complex_Array_Tuple out = {real, imag};
+    Array_Tuple real = fftshift(input.real);
+    Array_Tuple imag = fftshift(input.imaginary);
+    Complex_Array_Tuple out = {real, imag};
     return out;
 }
 
 //np.hamming
-struct Array_Tuple hamming(int M){ //! Returns a calloc ptr
+Array_Tuple hamming(int M){ //! Returns a calloc ptr
     double* output;
     output = (double*) calloc(M, sizeof(double));
 
@@ -529,12 +690,12 @@ struct Array_Tuple hamming(int M){ //! Returns a calloc ptr
     {
         output[i] = 0.54 - 0.46 * cos((2 * M_PI * i)/(M - 1));
     }
-    struct Array_Tuple out = {output, M};
+    Array_Tuple out = {output, M};
     return out;
 }
 
 //np.convolve: Circular Discrete Convolution --> https://en.wikipedia.org/wiki/Convolution
-struct Complex_Array_Tuple convolve(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
+Complex_Array_Tuple convolve(Complex_Array_Tuple a, Array_Tuple v){ //! Returns a calloc ptr
     int N = a.real.length + v.length - 1;
     double* output_real;
     output_real = (double*) calloc(N, sizeof(double));
@@ -563,13 +724,13 @@ struct Complex_Array_Tuple convolve(struct Complex_Array_Tuple a, struct Array_T
         output_imaginary[n] = sum_imaj;
     }
 
-    struct Array_Tuple real_out = {output_real, N };
-    struct Array_Tuple imaj_out = {output_imaginary, N};
-    struct Complex_Array_Tuple out = {real_out, imaj_out};
+    Array_Tuple real_out = {output_real, N };
+    Array_Tuple imaj_out = {output_imaginary, N};
+    Complex_Array_Tuple out = {real_out, imaj_out};
     return out;
 }
 
-struct Complex_Array_Tuple convolveSame(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
+Complex_Array_Tuple convolveSame(Complex_Array_Tuple a, Array_Tuple v){ //! Returns a calloc ptr
     int N = a.real.length + v.length - 1;
     double* output_real;
     output_real = (double*) calloc(N, sizeof(double));
@@ -622,14 +783,14 @@ struct Complex_Array_Tuple convolveSame(struct Complex_Array_Tuple a, struct Arr
 
     
 
-    struct Array_Tuple real_out = {shortened_real, output_length };
-    struct Array_Tuple imaj_out = {shortened_imaj, output_length};
-    struct Complex_Array_Tuple out = {real_out, imaj_out};
+    Array_Tuple real_out = {shortened_real, output_length };
+    Array_Tuple imaj_out = {shortened_imaj, output_length};
+    Complex_Array_Tuple out = {real_out, imaj_out};
     free(output_real);
     free(output_imaginary);
     return out;
 }
-struct Array_Tuple firwin(int M, double cutoff){ //! Returns a calloc ptr
+Array_Tuple firwin(int M, double cutoff){ //! Returns a calloc ptr
 
     double* output = (double*)calloc(M+1, sizeof(double));
     //scipy.signal.firwin
@@ -644,15 +805,15 @@ struct Array_Tuple firwin(int M, double cutoff){ //! Returns a calloc ptr
         output[i] = window * lowpassfilter;
     }
     
-    struct Array_Tuple out = {output, M};
+    Array_Tuple out = {output, M};
     return out;
 }
 //scipy.fftconvolve --> Ask isaac: almost same results as above convolve, just slightly off. By like e^-16. Worth rewriting?
-// struct Complex_Array_Tuple fftconvolve(struct Complex_Array_Tuple a, struct Array_Tuple v){ //! Returns a calloc ptr
+// Complex_Array_Tuple fftconvolve(Complex_Array_Tuple a, Array_Tuple v){ //! Returns a calloc ptr
 
 // }
 // same as scipy.resample_poly which upsamples an array of data, can also specify a down sample
-struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, int down){
+Complex_Array_Tuple resample_poly(Complex_Array_Tuple a, int up, int down){
     // upsample by factor of up
     double* upsampled_real = (double*)calloc(a.real.length * up, sizeof(double));
     double* upsampled_imaj = (double*)calloc(a.real.length * up, sizeof(double));
@@ -673,13 +834,13 @@ struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, i
     int greaterUpDown = (up >= down ? up : down);
     int filter_length = 10 * greaterUpDown;
 
-    struct Array_Tuple filterCoeff = firwin(filter_length, 1.0 / (double)greaterUpDown);
-    struct Array_Tuple up_real = {upsampled_real, a.real.length * up};
-    struct Array_Tuple up_imaj = {upsampled_imaj, a.real.length * up};
-    struct Complex_Array_Tuple up_complex = {up_real, up_imaj};
+    Array_Tuple filterCoeff = firwin(filter_length, 1.0 / (double)greaterUpDown);
+    Array_Tuple up_real = {upsampled_real, a.real.length * up};
+    Array_Tuple up_imaj = {upsampled_imaj, a.real.length * up};
+    Complex_Array_Tuple up_complex = {up_real, up_imaj};
     
 
-    struct Complex_Array_Tuple smoothed = convolveSame(up_complex, filterCoeff);
+    Complex_Array_Tuple smoothed = convolveSame(up_complex, filterCoeff);
     //printArray("smoothed", smoothed.real.array, smoothed.real.length);
     int down_length = smoothed.real.length / down;
     double* down_real = (double*)calloc(down_length, sizeof(double)); //! can make these static
@@ -711,9 +872,9 @@ struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, i
         out_imaj[i] = down_imaj[i] / sqrt(max_abs_value_sqr) * max_abs_input;
     }
     
-    struct Array_Tuple real_out = {out_real, down_length};
-    struct Array_Tuple imaj_out = {out_imaj, down_length};
-    struct Complex_Array_Tuple complex_out = {real_out, imaj_out};
+    Array_Tuple real_out = {out_real, down_length};
+    Array_Tuple imaj_out = {out_imaj, down_length};
+    Complex_Array_Tuple complex_out = {real_out, imaj_out};
 
     // free all temp arrays
     free(upsampled_real);
@@ -727,7 +888,7 @@ struct Complex_Array_Tuple resample_poly(struct Complex_Array_Tuple a, int up, i
     return complex_out;
 }
 
-void exportArray(struct Array_Tuple input, char filename[]){
+void exportArray(Array_Tuple input, char filename[]){
     FILE *fpt;
     fpt = fopen(filename, "w+");
     for (int i = 0; i < input.length; i++)
@@ -740,7 +901,7 @@ void exportArray(struct Array_Tuple input, char filename[]){
     fclose(fpt);
 }
 
-void exportComplexArray(struct Complex_Array_Tuple input, char filename[]){
+void exportComplexArray(Complex_Array_Tuple input, char filename[]){
     FILE *fpt;
     fpt = fopen(filename, "w+");
     for (int i = 0; i < input.real.length; i++)

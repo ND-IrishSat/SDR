@@ -4,10 +4,10 @@
 // CRC
 
 // CRC_xor 
-struct Array_Tuple CRC_xor(struct Array_Tuple a_array, struct Array_Tuple b_array);
+Array_Tuple CRC_xor(Array_Tuple a_array, Array_Tuple b_array);
 // CRC_mod2div
-struct Array_Tuple CRC_mod2div(struct Array_Tuple dividend_array, struct Array_Tuple divisor_array);
+Array_Tuple CRC_mod2div(Array_Tuple dividend_array, Array_Tuple divisor_array);
 // CRC_encodedData2
-struct Array_Tuple CRC_encodeData(struct Array_Tuple data, struct Array_Tuple key);
+Array_Tuple CRC_encodeData(Array_Tuple data, Array_Tuple key);
 
-int CRC_check(struct Array_Tuple codeword, struct Array_Tuple key);
+int CRC_check(Array_Tuple codeword, Array_Tuple key);
