@@ -107,7 +107,7 @@ int* symbol_demod(double baseband_symbols[][], char *scheme[], double channel_ga
     for (int i = 0; i < sizeof(I_demodulated)/sizeof(I_demodulated[0]); i++){
         a_demodulated[sizeof(a_demodulated)/sizeof(a_demodulated[0]) + 1] = I_demodulated[i];
     }
-    for (int i = 0; i < sizeof(Q_demodulated)/sizeof(Q_demodulated[0]; i++)){
+    for (int i = 0; i < sizeof(Q_demodulated)/sizeof(Q_demodulated[0]); i++){
       a_demodulated[sizeof(a_demodulated)/sizeof(a_demodulated[0]) + 1] = Q_demodulated[i];
     }
   }
@@ -192,17 +192,17 @@ int* symbol_demod(double baseband_symbols[][], char *scheme[], double channel_ga
     float reference_1110 = 3.0 * channel_gain + 1*j * channel_gain;
     float reference_1111 = 1.0 * channel_gain + 1*j * channel_gain;
     // create a new array to use to find the minimum for the next large bit of code that compares the absolute values to populate a 1 or 0 in the Q_demodulated and I_demodulated arrays
-    float new_comparison[16] = [cabs(symbol - reference_1111), cabs(symbol - reference_1110), cabs(symbol - reference_1101), cabs(symbol - reference_1100), cabs(symbol - reference_1011), cabs(symbol - reference_1010), cabs(symbol - reference_1001), cabs(symbol - reference_1000), cabs(symbol - reference_0111),cabs(symbol - reference_0110), cabs(symbol - reference_0101), cabs(symbol - reference_0100),cabs(symbol - reference_0011), cabs(symbol - reference_0010), cabs(symbol - reference_0001),cabs(symbol - reference_0000))];
+    float new_comparison[16] = [cabs(symbol - reference_1111), cabs(symbol - reference_1110), cabs(symbol - reference_1101), cabs(symbol - reference_1100), cabs(symbol - reference_1011), cabs(symbol - reference_1010), cabs(symbol - reference_1001), cabs(symbol - reference_1000), cabs(symbol - reference_0111),cabs(symbol - reference_0110), cabs(symbol - reference_0101), cabs(symbol - reference_0100),cabs(symbol - reference_0011), cabs(symbol - reference_0010), cabs(symbol - reference_0001),cabs(symbol - reference_0000)];
     float newMin = new_comparison[0];
     for(int i = 1; i < 16; i++){
-      if (new_comaprison[i] < newMin){
+      if (new_comparison[i] < newMin){
         newMin = new_comparison[i];
       }
     }
     //Start a for-loop to iterate through all complex symbols and make a decision on 4-bits of data
     for (int i = 0; i < sizeof(baseband_symbols_complex)/sizeof(baseband_symbols_complex[0][0]); i++){
       // ????
-      newLengthofQ = sizeof(Q_demodulated)/sizeof(Q_demodulated[0]);
+      int newLengthofQ = sizeof(Q_demodulated)/sizeof(Q_demodulated[0]);
       symbol = baseband_symbols_complex[i];
       if(cabs(symbol - reference_1111) == newMin){
         Q_demodulated[newLengthofQ + 1] = 1;
