@@ -319,4 +319,5 @@ int* symbol_demod(double baseband_symbols[][], char *scheme[], double channel_ga
       j = j + 4;
       i = i + 2;
     }
+   } 
 }
