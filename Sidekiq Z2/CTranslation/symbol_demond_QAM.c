@@ -200,7 +200,7 @@ int* symbol_demod(double baseband_symbols[][], char *scheme[], double channel_ga
       }
     }
     //Start a for-loop to iterate through all complex symbols and make a decision on 4-bits of data
-    for (i = 0; i < sizeof(baseband_symbols_complex)/sizeof(baseband_symbols_complex[0][0]); i++){
+    for (int i = 0; i < sizeof(baseband_symbols_complex)/sizeof(baseband_symbols_complex[0][0]); i++){
       // ????
       newLengthofQ = sizeof(Q_demodulated)/sizeof(Q_demodulated[0]);
       symbol = baseband_symbols_complex[i];
@@ -308,6 +308,7 @@ int* symbol_demod(double baseband_symbols[][], char *scheme[], double channel_ga
     
        // this is the very last while loop after all the elif statements -- in line with the for loop that iterates through all complex symbols and make a decision on 4-bits of data (line 236 in py)
     int i = 0;
+    int j = 0;
     a_demodulated[4];
     while (j < (sizeof(Q_demodulated)/sizeof(Q_demodulated[0]))) {
       // 4 append statements
