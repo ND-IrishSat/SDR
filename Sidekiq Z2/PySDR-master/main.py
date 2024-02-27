@@ -242,7 +242,6 @@ https://wirelesspi.com/phase-locked-loop-pll-for-symbol-timing-recovery/
 """
 
 samples_interpolated = signal.resample_poly(testpacket, 16, 1)
-print(f"samp: {samples_interpolated}")
 plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
 plt.title("After interpolation")
 plt.legend(loc="upper left")
@@ -383,7 +382,7 @@ Without IQ imbalance correcion, the phase noise
 distorts the data, this puts it back to relatively
 a circle. It is visualized better with QPSK schemes.
 """
-testpacket = IQ_Imbalance_Correct(testpacket, mean_period=1) # mean_period adjusts how many values it should take the mean of in each direction of an array for a given value.
+testpacket = IQ_Imbalance_Correct(testpacket, mean_period=(len(testpacket)//2)) # mean_period adjusts how many values it should take the mean of in each direction of an array for a given value.
 PlotWave(testpacket)
 ShowConstellationPlot(testpacket)
 #------------------------------------------------

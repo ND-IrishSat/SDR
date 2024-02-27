@@ -98,9 +98,18 @@ Complex_Array_Tuple zerosComplex(int length){ //! Returns a calloc ptr
     Complex_Array_Tuple tuple = {real_t, imaj_t};
     return tuple;
 }
+// Creates an Complex_Array_Tuple length {0,0,0,0,0} and its known length
+Array_Tuple zerosArray(int length){ //! Returns a calloc ptr
+    
+    double* real;
+    real = (double*)calloc(length, sizeof(double));
+    
+    Array_Tuple real_t = {real, length};
+    return real_t;
+}
 
 // Creates an Complex_Array_Tuple of complex conjugates of the input -> np.conj
-Complex_Array_Tuple conj(Complex_Array_Tuple input){ //! Returns a calloc ptr
+Complex_Array_Tuple getConj(Complex_Array_Tuple input){ //! Returns a calloc ptr
     int length = input.real.length;
     double* real;
     real = (double*)calloc(length, sizeof(double));
@@ -127,6 +136,17 @@ double meanArray(double* array, int length){
         sum += array[i];
     }
     double avg = sum / (double)length;
+    
+    return avg; // to use this: int *array; array= randomArray(2,size);
+}
+// gets the average of an array
+double meanArrayTuple(Array_Tuple array){
+    double sum = 0;
+    for (int i = 0; i < array.length; i++)
+    {
+        sum += array.array[i];
+    }
+    double avg = sum / (double)array.length;
     
     return avg; // to use this: int *array; array= randomArray(2,size);
 }
@@ -168,8 +188,9 @@ Array_Tuple flip(Array_Tuple a){ //! Returns a calloc ptr
     return t; //once done, must free memory of ptr
 }
 
+
 // Raises e to the element of every complex number in an array --> np.exp()
-Complex_Array_Tuple exp_array(Complex_Array_Tuple array) //! Returns a calloc ptr
+Complex_Array_Tuple expComplexArray(Complex_Array_Tuple array) //! Returns a calloc ptr
 {
     // Euler's stuff: e to the power of a complex number -- cool!
     double e = M_E;
@@ -279,7 +300,7 @@ Array_Tuple arange(double start, double end, double step){ //! Returns a calloc 
 }
 
 //np.linspace creates an array from start to end with x number of points defined by length
-Array_Tuple linspace(double start, double end, double length){ //! Returns a calloc ptr
+Array_Tuple linspace(double start, double end, int length){ //! Returns a calloc ptr
     double* out_array;
     out_array = (double*)calloc(length, sizeof(double));
     double step = (end - start) / (length-1);
@@ -530,33 +551,6 @@ Array_Tuple pulsetrain(Array_Tuple bits, int sps){ //! Returns a calloc ptr
     
 }
 
-Complex_Array_Tuple generateNoise(Complex_Array_Tuple testpacket){ //! Returns a calloc ptr
-    // vars
-    int max = 1;
-    double mean = 0;
-    double std_dev = 0.1;
-    double noise_power = 0.2;
-    int num_samples = testpacket.real.length;
-    double phase_noise_strength = 0.1;
-
-    // creating general normal distribution random arrays for real and complex
-    double* awgn_comlpex_samples_real;
-    double* awgn_comlpex_samples_imag;
-    awgn_comlpex_samples_real = (double*)calloc(num_samples, sizeof(double));
-    awgn_comlpex_samples_imag = (double*)calloc(num_samples, sizeof(double));
-    for (int i = 0; i < num_samples; i++)
-    {
-        double phase_noise = rand_norm(mean, std_dev) * phase_noise_strength;
-        awgn_comlpex_samples_real[i] = (testpacket.real.array[i] + rand_norm(mean, std_dev) / sqrt(noise_power)) * cos(phase_noise);
-        awgn_comlpex_samples_imag[i] = (testpacket.imaginary.array[i] + rand_norm(mean, std_dev) / sqrt(noise_power)) * sin(phase_noise);
-    }
-
-    Array_Tuple real = {awgn_comlpex_samples_real, num_samples};
-    Array_Tuple imag = {awgn_comlpex_samples_imag, num_samples};
-    Complex_Array_Tuple out = {real, imag};
-    return out;
-}
-
 Complex_Array_Tuple everyOtherElement(Complex_Array_Tuple array, int offset){ //! Returns a calloc ptr
     if (offset >= 1){
         offset = 1;
@@ -583,17 +577,19 @@ Complex_Array_Tuple everyOtherElement(Complex_Array_Tuple array, int offset){ //
 // Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
 Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
     int N = array.real.length;
-    fftw_complex *in, *out;
+    fftw_complex *in_fftw, *out_fftw;
     fftw_plan p;
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    in_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    out_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
 
-    p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, in_fftw, out_fftw, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Populate input array with real and imaginary parts
     for (int i = 0; i < N; i++) {
-        in[i][0] = array.real.array[i]; // Real part
-        in[i][1] = array.imaginary.array[i]; // Imaginary part
+        double r = array.real.array[i];
+        double im = array.imaginary.array[i];
+        in_fftw[i][0] = r; // Real part
+        in_fftw[i][1] = im; // Imaginary part
     }
     // Execute FFT
     fftw_execute(p);
@@ -602,25 +598,20 @@ Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
     fftw_execute(p);
 
     // Store output in the provided struct
-    double* result_real;
-    result_real = (double*) calloc(N, sizeof(double));
-    double* result_imaginary;
-    result_imaginary = (double*) calloc(N, sizeof(double));
+    Complex_Array_Tuple out_struct = zerosComplex(N);
 
     // Extract real and imaginary parts from output
     for (int i = 0; i < N; i++) {
-        result_real[i] = out[i][0]; // Real part
-        result_imaginary[i] = out[i][1]; // Imaginary part
+        double r = out_fftw[i][0];
+        double im = out_fftw[i][1];
+        out_struct.real.array[i] = r; // Real part
+        out_struct.imaginary.array[i] = im; // Imaginary part
     }
 
     // Free memory and destroy plan
     fftw_destroy_plan(p);
-    fftw_free(in);
-    fftw_free(out);
-
-    Array_Tuple real_out = {result_real, N};
-    Array_Tuple imaj_out = {result_imaginary, N};
-    Complex_Array_Tuple out_struct = {real_out, imaj_out};
+    fftw_free(in_fftw);
+    fftw_free(out_fftw);
     return out_struct;
 }
 
