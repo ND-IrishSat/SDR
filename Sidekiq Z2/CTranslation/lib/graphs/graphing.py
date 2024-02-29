@@ -79,10 +79,24 @@ if __name__ == "__main__":
     plt.stem(np.real(symbols_I), 'ko')
     plt.title("After pulse shaping")
     plt.show()
+    ShowConstellationPlot(symbols_I, title="C PulseShape")
     #Noise
+    test = documentToArray("test.txt")
+    ShowConstellationPlot(test, title="C AWGN")
+
     testpacket = documentToArray("noise.txt")
     print(f"Noise: {len(testpacket)}")
+    ShowConstellationPlot(testpacket, title="C Noise")
     #After Freq Offset
+    #* HERE
+    h = documentToArray("h_simulationchannel.txt")
+    plt.stem(h, 'bo', label="Original Pulse Shaped Waveform")
+    plt.title("C Simulation Channel h")
+    plt.legend(loc="upper left")
+    plt.show()
+    simulationchannel = documentToArray("simulationchannel.txt")
+    ShowConstellationPlot(simulationchannel, title="C Simulation Channel")
+
     testpacket = documentToArray("testpacketfreqshift.txt")
     print(f"After Freq Offset: {len(testpacket)}")
     plt.stem(np.real(symbols_I), label="Original Pulse Shaped Waveform")

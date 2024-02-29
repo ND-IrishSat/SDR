@@ -137,6 +137,8 @@ plt.stem(symbols_I, 'ko')
 plt.title("After pulse shaping")
 plt.show()
 
+ShowConstellationPlot(testpacket, title="Py Pulse Shape")
+
 #######################
 # Transmission: Where transmission would occur in a real system
 
@@ -175,16 +177,17 @@ https://wirelesspi.com/what-is-carrier-phase-offset-and-how-it-affects-the-symbo
 mean = 0      # Mean of the Gaussian distribution (usually 0 for AWGN)
 std_dev = 0.1   # Standard deviation of the Gaussian distribution
 num_samples = len(testpacket)
-
 awgn_complex_samples = (np.random.randn(num_samples) + 1j*np.random.randn(num_samples)) / np.sqrt(2)
 noise_power = 10
 awgn_complex_samples /= np.sqrt(noise_power)
+ShowConstellationPlot(awgn_complex_samples, title="Py AWGN")
 #awgn_samples = np.random.normal(mean, std_dev, num_samples) #this is original noise func
 phase_noise_strength = 0.1
 phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random imaginary phase noise
 testpacket = np.add(testpacket, awgn_complex_samples)
 testpacket = np.multiply(testpacket, phase_noise_samples)
 print(f"Noise: {len(testpacket)}")
+ShowConstellationPlot(testpacket, title="Py Noise")
 #################################
 # Add fractional delay
 
@@ -195,7 +198,12 @@ n = np.arange(-N//2, N//2) # ...-3,-2,-1,0,1,2,3...
 h = np.sinc(n - delay) # calc filter taps
 h *= np.hamming(N) # window the filter to make sure it decays to 0 on both sides
 h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
+plt.stem(h, 'bo', label="h")
+plt.title("Py Simulation Channel h")
+plt.legend(loc="upper left")
+plt.show()
 testpacket = np.convolve(testpacket, h) # apply filter
+ShowConstellationPlot(testpacket, title="Py Simulation Channel")
 ###################################
 # Add frequency offset - NOTE: Frequency offset of > 1% will result in inability of crosscorrelation operation to detect frame start
 

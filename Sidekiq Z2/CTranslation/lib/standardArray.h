@@ -254,7 +254,6 @@ double rand_norm(double mu, double sigma){
     double U1, U2, W, mult;
     static double rand_norm_X1, rand_norm_X2;
     static int call_norm = 0;
-
     if (call_norm == 1)
     {
         call_norm = !call_norm;
@@ -360,28 +359,21 @@ Array_Tuple subtractArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc p
 }
 Array_Tuple subtractDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
     int length = a.length;
-    double* output;
-    output = (double*) calloc(length, sizeof(double));
+    Array_Tuple out = zerosArray(length);
 
     for (int i = 0; i < length; i++)
     {
-        double sum = 0;
-        sum += a.array[i] - b;
-        output[i] = sum;
+        out.array[i] = a.array[i] - b;
     }
-    Array_Tuple out = {output, length};
     return out;
 }
 Array_Tuple divideDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
     int length = a.length;
-    double* output;
-    output = (double*) calloc(length, sizeof(double));
-
+    Array_Tuple out = zerosArray(length);
     for (int i = 0; i < length; i++)
     {
-        output[i] = a.array[i] / b;
+        out.array[i] = a.array[i] / b;
     }
-    Array_Tuple out = {output, length};
     return out;
 }
 Array_Tuple multiplyDoubleFromArray(Array_Tuple a, double b){ //! Returns a calloc ptr
@@ -401,14 +393,11 @@ Array_Tuple multiplyArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc p
     if (b.length < length){
         length = b.length;
     }
-    double* output;
-    output = (double*) calloc(length, sizeof(double));
-
+    Array_Tuple out = zerosArray(length);
     for (int i = 0; i < length; i++)
     {
-        output[i] = a.array[i] * b.array[i];
+        out.array[i] = a.array[i] * b.array[i];
     }
-    Array_Tuple out = {output, length};
     return out;
 }
 Array_Tuple divideArrays(Array_Tuple a, Array_Tuple b){ //! Returns a calloc ptr
@@ -495,20 +484,17 @@ Complex_Array_Tuple subtractComplexArrays(Complex_Array_Tuple a, Complex_Array_T
 
 //same as np.sinc, does sin(pi * x) / (pi * x), but lim x-> 0 = 1, so if x=0 return 1
 Array_Tuple sinc(Array_Tuple input){ //! Returns a calloc ptr
-    double* ptr;
-    ptr = (double*)calloc(input.length, sizeof(double));
+    Array_Tuple out = zerosArray(input.length);
 
     for (int i = 0; i < input.length; i++)
     {
         double x = input.array[i];
         if (x != 0){ // dont wanna ÷ by zero
-            ptr[i] = sin(M_PI * x) / (M_PI * x);
+            out.array[i] = sin(M_PI * x) / (M_PI * x);
         } else {
-            ptr[i] = 1; // lim x->0 = 1
+            out.array[i] = 1; // lim x->0 = 1
         }
     }
-    
-    Array_Tuple out = {ptr, input.length};
     return out;
 }
 //np.sum Adds them all together

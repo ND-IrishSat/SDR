@@ -128,27 +128,33 @@ Complex_Array_Tuple generateNoise(Complex_Array_Tuple testpacket){
 
     // creating general normal distribution random arrays for real and complex
     Complex_Array_Tuple out = zerosComplex(num_samples);
+    Complex_Array_Tuple testing = zerosComplex(num_samples);
     for (int i = 0; i < num_samples; i++)
     {
+
         double real = testpacket.real.array[i];
+        double imaj = testpacket.imaginary.array[i];
+
         double x = rand_norm(mean, std_dev);
-        x /= sqrt(2.0);
-        x /= sqrt(noise_power);
-        real += x;
+        double x_2 = x / sqrt(2.0);
+        double x_3 = x_2 / sqrt(noise_power);
 
-        double imaj = testpacket.real.array[i];
         double y = rand_norm(mean, std_dev);
-        y /= sqrt(2.0);
-        y /= sqrt(noise_power);
-        imaj += y;
+        double y_2 = y / sqrt(2.0);
+        double y_3 = y_2 / sqrt(noise_power);
 
-        double complex phase_noise = cexp(I * rand_norm(mean, std_dev) * phase_noise_strength);
+        double complex awgn_noise = x_3 + I*y_3;
+
+        double complex phase_noise = cexp( I * (rand_norm(mean, std_dev) * phase_noise_strength) );
         double complex packet_complex = real + I * imaj;
-        double complex out_packet = packet_complex * phase_noise;
+        double complex out_packet = (packet_complex + awgn_noise) * phase_noise;
 
+        testing.real.array[i] = creal(awgn_noise);
+        testing.imaginary.array[i] = cimag(awgn_noise);
         out.real.array[i] = creal(out_packet);
         out.imaginary.array[i] = cimag(out_packet);
     }
+    exportComplexArray(testing, "test.txt");
     return out;
 }
 Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
@@ -161,9 +167,12 @@ Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, dou
     Array_Tuple h = sinc(temp); // calc filter taps
     Array_Tuple ham = hamming(N);
     Array_Tuple temp2 = multiplyArrays(h, ham); // window the filter to make sure it decays to 0 on both sides
-    Array_Tuple new_h = divideDoubleFromArray(temp2, sumArray(temp2)); // normalize to get unity gain, we don't want to change the amplitude/power
+    double h_sum = sumArray(temp2);
+    Array_Tuple new_h = divideDoubleFromArray(temp2, h_sum); // normalize to get unity gain, we don't want to change the amplitude/power
+    //TODO: One value off somewhere
+    exportArray(new_h, "h_simulationchannel.txt");
     Complex_Array_Tuple testpacket = convolve(testpacket_noise, new_h); // apply filter
-
+    exportComplexArray(testpacket, "simulationchannel.txt");
     // apply a freq offset
     int fo = 61250; // Simulated frequency offset
     Ts = (double) 1 / fs; // calc sample period
