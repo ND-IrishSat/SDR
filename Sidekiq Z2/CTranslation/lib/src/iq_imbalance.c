@@ -85,8 +85,8 @@ Complex_Array_Tuple IQImbalanceCorrect(Complex_Array_Tuple packet, int mean_peri
         I_final[i] = A * I_tuple.array[i];
         Q_final[i] = C * I_tuple.array[i] + D * Q_tuple.array[i];
     }
-    free(BI.array);
-    free(BQ.array);
+    freeArrayMemory(BI);
+    freeArrayMemory(BQ);
     free(I_second_squared); // both temp arrays
     free(I_times_Q_second);
     Array_Tuple I_out = {I_final, I_tuple.length};

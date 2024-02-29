@@ -21,36 +21,6 @@ bool isInteger(double val)
     return (val == truncated);
 }
 
-// Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
-void printArray(char *string, double* arr, int length){
-    for (int i = 0; i < strlen(string); i++) {
-        printf("%c", string[i]);
-    }
-    printf("(%d): ", length);
-    printf("[");
-    for (int i=0; i < length; i++){
-        if (i != 0){
-            printf(", ");
-        }
-        printf("%lf", arr[i]);
-    }
-    printf("]\n");
-}
-void printComplexArray(char *string, double* arr, double* imag_arr, int length){
-    for (int i = 0; i < strlen(string); i++) {
-        printf("%c", string[i]);
-    }
-    printf("(%d): ", length);
-    printf("[ ");
-    for (int i=0; i < length; i++){
-        if (i != 0){
-            printf(", ");
-        }
-        printf("%lf%c%lfj", arr[i], (imag_arr[i] < 0 ? '\0' : '+'), imag_arr[i]);
-    }
-    printf(" ]\n");
-}
-
 // Array Tuple that keeps track of the length of the array and a pointer to the array
 typedef struct Array_Tuple {
     double* array;
@@ -62,9 +32,43 @@ typedef struct Complex_Array_Tuple {
     Array_Tuple imaginary;
 }Complex_Array_Tuple;
 
+// Prints an array printArray("Debug Text", ptr to int[], length) (prints out) --> Debug Text: [1, 0, ...]
+void printArray(char *string, Array_Tuple arr){
+    for (int i = 0; i < strlen(string); i++) {
+        printf("%c", string[i]);
+    }
+    printf("(%d): ", arr.length);
+    printf("[");
+    for (int i=0; i < arr.length; i++){
+        if (i != 0){
+            printf(", ");
+        }
+        printf("%lf", arr.array[i]);
+    }
+    printf("]\n");
+}
+void printComplexArray(char *string, Complex_Array_Tuple arr){
+    for (int i = 0; i < strlen(string); i++) {
+        printf("%c", string[i]);
+    }
+    printf("(%d): ", arr.real.length);
+    printf("[ ");
+    for (int i=0; i < arr.real.length; i++){
+        if (i != 0){
+            printf(", ");
+        }
+        printf("%lf%c%lfj", arr.real.array[i], (arr.imaginary.array[i] < 0 ? '\0' : '+'), arr.imaginary.array[i]);
+    }
+    printf(" ]\n");
+}
 // Pass in an Array_Tuple and it will free the memory from that pointer, this only needs to be done on pointers that use the calloc() and malloc() functions
 void freeArrayMemory(Array_Tuple array){
     free(array.array);
+    return;
+}
+void freeComplexArrayMemory(Complex_Array_Tuple array){
+    free(array.real.array);
+    free(array.imaginary.array);
     return;
 }
 // Creates an Array_Tuple from a known array {1,1,1,0,...} and its known length
@@ -216,21 +220,16 @@ Complex_Array_Tuple exp_imaginaryArray(Array_Tuple array) //! Returns a calloc p
 {
     // Euler's stuff: e to the power of a complex number -- cool!
     double e = M_E;
-    double* real_ptr;
-    real_ptr = (double*)calloc(array.length, sizeof(double));
-    double* imag_ptr;
-    imag_ptr = (double*)calloc(array.length, sizeof(double));
+    Complex_Array_Tuple out = zerosComplex(array.length);
     for (int i = 0; i < array.length; i++)
     {
         double real = 0;
-        double power_num  = pow(e, real);
-        real_ptr[i] = power_num * cos(array.array[i]); // technically array.imag.array[i] * ln(a), where a^(b+ci), but a=e, so ln(e)=1
-        imag_ptr[i] = power_num * sin(array.array[i]);
+        double complex num = real + array.array[i] * I;
+        double complex e_num = cexp(num);
+        out.real.array[i] = creal(e_num); // technically array.imag.array[i] * ln(a), where a^(b+ci), but a=e, so ln(e)=1
+        out.imaginary.array[i] = cimag(e_num);
         /* code */
     }
-    Array_Tuple real = {real_ptr, array.length};
-    Array_Tuple imag = {imag_ptr, array.length};
-    Complex_Array_Tuple out = {real, imag};
     return out;
 }
 
@@ -283,10 +282,10 @@ Array_Tuple arange(double start, double end, double step){ //! Returns a calloc 
     int length = 0;
     static double array[2048];
     double num = start;
-    while (num < end){
+    while (num <= end){
         array[length] = num;
         num += step;
-        length += 1;
+        length ++;
     }
     double* out_array;
     out_array = (double*)calloc(length, sizeof(double));
@@ -437,24 +436,17 @@ Complex_Array_Tuple multiplyComplexArrays(Complex_Array_Tuple x, Complex_Array_T
     if (y.real.length < length){
         length = y.real.length;
     }
-    double* output_real;
-    output_real = (double*) calloc(length, sizeof(double));
-    double* output_imaj;
-    output_imaj = (double*) calloc(length, sizeof(double));
+    Complex_Array_Tuple out_tuple = zerosComplex(length);
 
     for (int i = 0; i < length; i++)
     {
         // (a+bi)*(c+di) = (ac-bd)+(ad+bc)i;
-        double a = x.real.array[i];
-        double b = x.imaginary.array[i];
-        double c = y.real.array[i];
-        double d = y.imaginary.array[i];
-        output_real[i] = a*c - b*d;
-        output_imaj[i] = a*d + b*c;
+        double complex a = x.real.array[i] + I * x.imaginary.array[i];
+        double complex b = y.real.array[i] + I * y.imaginary.array[i];
+        double complex m = a * b;
+        out_tuple.real.array[i] = creal(m);
+        out_tuple.imaginary.array[i] = cimag(m);
     }
-    Array_Tuple out_real = {output_real, length};
-    Array_Tuple out_imaj = {output_imaj, length};
-    Complex_Array_Tuple out_tuple = {out_real, out_imaj};
     return out_tuple;
 }
 // add two complex arrays together
@@ -530,23 +522,21 @@ double sumArray(Array_Tuple input){
 }
 // Takes a bit array and converts it to a pulse train from -1 to 1 with sps-1 zeros between each bit
 Array_Tuple pulsetrain(Array_Tuple bits, int sps){ //! Returns a calloc ptr
-    double* array_ptr;
     int length = bits.length * sps;
-    array_ptr = (double*)calloc(length, sizeof(double));
+    Array_Tuple t = zerosArray(length);
     int offset = 0;
     for (int i = 0; i < bits.length; i++)
     {
         for (int x = 0; x < sps; x++)
         {
             if (x == 0){
-                array_ptr[x+offset] = bits.array[i]*2 - 1; // sets 0 to -1 and 1 to 1
+                t.array[x+offset] = bits.array[i]*2 - 1; // sets 0 to -1 and 1 to 1
             } else {
-                array_ptr[x+offset] = 0; // puts zeros between the bits to make it easier to read
+                t.array[x+offset] = 0; // puts zeros between the bits to make it easier to read
             }
         }
         offset += sps;
     }
-    Array_Tuple t = {array_ptr, length};
     return t;
     
 }
@@ -577,7 +567,8 @@ Complex_Array_Tuple everyOtherElement(Complex_Array_Tuple array, int offset){ //
 // Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
 Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
     int N = array.real.length;
-    fftw_complex *in_fftw, *out_fftw;
+    fftw_complex *in_fftw;
+    fftw_complex *out_fftw;
     fftw_plan p;
     in_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
     out_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
@@ -588,8 +579,8 @@ Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
     for (int i = 0; i < N; i++) {
         double r = array.real.array[i];
         double im = array.imaginary.array[i];
-        in_fftw[i][0] = r; // Real part
-        in_fftw[i][1] = im; // Imaginary part
+        (&in_fftw[i])[0] = r; // Real part //TODO: should work without (&), so CHECK THIS
+        (&in_fftw[i])[1] = im; // Imaginary part
     }
     // Execute FFT
     fftw_execute(p);
@@ -602,8 +593,8 @@ Complex_Array_Tuple fft(Complex_Array_Tuple array){ //! Returns a calloc ptr
 
     // Extract real and imaginary parts from output
     for (int i = 0; i < N; i++) {
-        double r = out_fftw[i][0];
-        double im = out_fftw[i][1];
+        double r = (&out_fftw[i])[0];
+        double im = (&out_fftw[i])[1];
         out_struct.real.array[i] = r; // Real part
         out_struct.imaginary.array[i] = im; // Imaginary part
     }
@@ -633,10 +624,9 @@ Array_Tuple absComplexArray(Complex_Array_Tuple array){ //! Returns a calloc ptr
 
 int argMax(Array_Tuple input){
     int max_index = -1;
-    int max_value = INT_MIN;
-    // Extract real and imaginary parts from output
+    int max_value = INT_MIN; // int min
     for (int i = 0; i < input.length; i++) {
-        if (input.array[i] > max_value){
+        if (input.array[i] >= max_value){
             max_value = input.array[i];
             max_index = i;
         }
@@ -832,7 +822,7 @@ Complex_Array_Tuple resample_poly(Complex_Array_Tuple a, int up, int down){
     
 
     Complex_Array_Tuple smoothed = convolveSame(up_complex, filterCoeff);
-    //printArray("smoothed", smoothed.real.array, smoothed.real.length);
+
     int down_length = smoothed.real.length / down;
     double* down_real = (double*)calloc(down_length, sizeof(double)); //! can make these static
     double* down_imaj = (double*)calloc(down_length, sizeof(double));
@@ -872,16 +862,22 @@ Complex_Array_Tuple resample_poly(Complex_Array_Tuple a, int up, int down){
     free(upsampled_imaj);
     free(down_real);
     free(down_imaj);
-    free(filterCoeff.array);
-    free(smoothed.real.array);
-    free(smoothed.imaginary.array);
+    freeArrayMemory(filterCoeff);
+    freeComplexArrayMemory(smoothed);
 
     return complex_out;
 }
 
 void exportArray(Array_Tuple input, char filename[]){
     FILE *fpt;
-    fpt = fopen(filename, "w+");
+    char export_name[1000] = "lib/graphs/";
+    int start = strlen(export_name);
+    for (int i = 0; i < strlen(filename); i++)
+    {
+        export_name[i+start] = filename[i];
+    }
+    export_name[strlen(export_name)] = '\0';
+    fpt = fopen(export_name, "w+");
     for (int i = 0; i < input.length; i++)
     {
         fprintf(fpt, "%lf", input.array[i]);
@@ -894,7 +890,14 @@ void exportArray(Array_Tuple input, char filename[]){
 
 void exportComplexArray(Complex_Array_Tuple input, char filename[]){
     FILE *fpt;
-    fpt = fopen(filename, "w+");
+    char export_name[1000] = "lib/graphs/";
+    int start = strlen(export_name);
+    for (int i = 0; i < strlen(filename); i++)
+    {
+        export_name[i+start] = filename[i];
+    }
+    export_name[strlen(export_name)] = '\0';
+    fpt = fopen(export_name, "w+");
     for (int i = 0; i < input.real.length; i++)
     {
         if (input.imaginary.array[i] < 0){

@@ -3,87 +3,79 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-#define PI 3.14159265358979323846
-
-struct array_baseband {
-  int *baseband;
-  int length;
-};
+#include "../standardArray.h" //! remove on build
 
 // Function prototypes
-void pulse_shaping(float *a, int M, float fs, char *pulse_shape, float alpha, int L, float *baseband);
-void rrcosfilter(int N, float alpha, float Ts, float Fs, float *time_idx, float *h_rrc);
+Array_Tuple pulse_shaping(Array_Tuple a, int M, double fs, char pulse_shape[], double alpha, int L);
+Array_Tuple rrcosfilter(int N, double alpha, double Ts, double Fs);
 
 // save dynamic arrays into a static variable before freeing the array 
-void pulse_shaping(float *a, int M, float fs, char *pulse_shape, float alpha, int L, float *baseband) {
-    // Upsample by a factor of M
-    // (Note: The convolution part has been simplified)
-
+Array_Tuple pulse_shaping(Array_Tuple a, int M, double fs, char pulse_shape[], double alpha, int L) {
     if (strcmp(pulse_shape, "rrc") == 0) {
-        // Root Raised-Cosine span
         int N = L * M;
-        float T_symbol = 1.0 / (fs / M);
+        // Root Raised-Cosine span
+        double T_symbol = 1.0 / (fs / M);
 
         // Generate RRC filter coefficients
-        float *time_idx;
-        float *h_rrc;
-        rrcosfilter(N, alpha, T_symbol, fs, time_idx, h_rrc);
+        Array_Tuple h_rrc = rrcosfilter(N, alpha, T_symbol, fs);
 
         // Convolve the input with the RRC filter
-        // (Note: The convolution part has been simplified)
-        for (int i = 0; i < N + (sizeof(a) / sizeof(float)) - 1; i++) {
-          baseband[i] = 0.0;
-          for (int j = 0; j < (sizeof(a) / sizeof(float)); j++) {
-            if (i - j >= 0 && i - j < N) {
-              baseband[i] += a[j] * h_rrc[i - j];
-            }
-          }
-        }
-      }
-  
-    if (strcmp(pulse_shape, "rect") == 0) {
-        // Rectangular pulse
-        Ts = 1 / fs;
-      for (int i = 0; i < (sizeof(a) / sizeof(float)) * M; i++) {
-          baseband[i] = a[i];
-      }
-    }
+        Array_Tuple a_imaj = zerosArray(a.length);
+        Complex_Array_Tuple a_complex = {a, a_imaj};
+        Complex_Array_Tuple convolve_out = convolve(a_complex, h_rrc);
+        freeArrayMemory(a_imaj);
+        freeArrayMemory(h_rrc);
+        freeArrayMemory(convolve_out.imaginary);
+        return convolve_out.real;
+        //free(h_rrc);
+    } 
+    // else if (strcmp(pulse_shape, "rect") == 0) {//! This is not correct, goes off of scipy.upfirdn
+    //     // Rectangular pulse
+    //   for (int i = 0; i < a.length * M; i++) {
+    //       baseband[i] = a.array[i];
+    //   }
+    //   Array_Tuple tuple = zerosArray(a.length * M);
+    //   for (int i = 0; i < tuple.length; i++)
+    //   {
+    //     tuple.array[i] = baseband[i];
+    //   }
+    //   //free(baseband);
+    //   return tuple;
+    // }
+    return a;
 }
 
-void rrcosfilter(int N, float alpha, float Ts, float Fs, float *time_idx, float *h_rrc) {
+Array_Tuple rrcosfilter(int N, double alpha, double Ts, double Fs) {
     // Generate a root raised cosine (RRC) filter (FIR) impulse response
-    float T_delta = 1.0 / Fs;
+    double T_delta = 1.0 / Fs;
 
     // Allocate memory for time indices
-    time_idx = (float *)malloc(N * sizeof(float)); // DYNAMIC
+    Array_Tuple time_idx_arange = arange(0, N, 1);
+    Array_Tuple time_idx__minus = subtractDoubleFromArray(time_idx_arange, (double)N /2.0);
+    Array_Tuple time_idx = multiplyDoubleFromArray(time_idx__minus, T_delta);
 
+    Array_Tuple h_rrc = zerosArray(N);
     // Populate time indices
     for (int x = 0; x < N; x++) {
-        time_idx[x] = (x - N / 2) * T_delta;
+        time_idx.array[x] = (x - N / 2) * T_delta;
     }
-
-    // Allocate memory for RRC filter coefficients
-    h_rrc = (float *)malloc(N * sizeof(float)); // DYNAMIC
+    freeArrayMemory(time_idx_arange);
+    freeArrayMemory(time_idx__minus);
+    freeArrayMemory(time_idx);
 
     // Populate RRC filter coefficients
     for (int x = 0; x < N; x++) {
-        float t = (x - N / 2) * T_delta;
+        double t = (x - (double)N / 2.0) * T_delta;
         if (t == 0.0) {
-            h_rrc[x] = 1.0 - alpha + (4 * alpha / PI);
+            h_rrc.array[x] = 1.0 - alpha + (4.0 * alpha / M_PI);
         } else if (alpha != 0 && t == Ts / (4 * alpha)) {
-            h_rrc[x] = (alpha / sqrt(2)) * (((1 + 2 / PI) * (sin(PI / (4 * alpha)))) +
-                                            ((1 - 2 / PI) * (cos(PI / (4 * alpha)))));
+            h_rrc.array[x] = (alpha / sqrt(2)) * (((1 + 2.0 / M_PI) * (sin(M_PI / (4 * alpha)))) + ((1 - 2.0 / M_PI) * (cos(M_PI / (4 * alpha)))));
         } else if (alpha != 0 && t == -Ts / (4 * alpha)) {
-            h_rrc[x] = (alpha / sqrt(2)) * (((1 + 2 / PI) * (sin(PI / (4 * alpha)))) +
-                                            ((1 - 2 / PI) * (cos(PI / (4 * alpha)))));
+            h_rrc.array[x] = (alpha / sqrt(2)) * (((1 + 2.0 / M_PI) * (sin(M_PI / (4 * alpha)))) + ((1 - 2.0 / M_PI) * (cos(M_PI / (4 * alpha)))));
         } else {
-            h_rrc[x] = (sin(PI * t * (1 - alpha) / Ts) +
-                        4 * alpha * (t / Ts) * cos(PI * t * (1 + alpha) / Ts)) /
-                       (PI * t * (1 - (4 * alpha * t / Ts) * (4 * alpha * t / Ts)) / Ts);
+            h_rrc.array[x] = (sin(M_PI * t * (1 - alpha) / Ts) + 4 * alpha * (t / Ts) * cos(M_PI * t * (1 + alpha) / Ts)) / (M_PI * t * (1 - (4 * alpha * t / Ts) * (4 * alpha * t / Ts)) / Ts);
         }
     }
-    free(h_rrc); // not sure where to free this --> possibly in main() but we will put it here for now
-    free(time_idx); //save to a static variable
-  
+
+    return h_rrc;
 }

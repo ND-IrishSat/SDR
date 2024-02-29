@@ -76,14 +76,16 @@ https://www.geeksforgeeks.org/cyclic-redundancy-check-python/#
 
 """
 preamble = np.array([0,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,1,0]).astype(float) # optimal periodic binary code for N = 63 https://ntrs.nasa.gov/citations/19800017860
-
-data = np.random.randint(2, size=256).astype(float)
+data_size = 30
+data = np.random.randint(2, size=data_size).astype(float)
 
 CRC_key = np.array([1,0,0,1,1,0,0,0,0,1,1,1]) # Best CRC polynomials: https://users.ece.cmu.edu/~koopman/crc/
 data_encoded = CRC.encodeData(data, CRC_key)
 
 bits = np.append(preamble,data_encoded)
 
+print(f"Preamble: {len(preamble)}")
+print(f"Bits: {len(bits)}")
 sps = M # samples per symbol, equal to oversampling factor
 
 matched_filter_coef = np.flip(preamble)
@@ -104,11 +106,11 @@ https://pysdr.org/content/digital_modulation.html
 """
 
 pulse_train = np.array([])
-
 for bit in bits:
     pulse = np.zeros(sps)
     pulse[0] = bit*2-1 # set the first value to either a 1 or -1
     pulse_train = np.concatenate((pulse_train, pulse)) # add the 8 samples to the signal
+print(f"Pulse Train: {len(pulse_train)}")
 plt.stem(pulse_train, label="Pulse Train")
 plt.stem(bits, 'ro', label="Original Bits")
 plt.legend(loc="upper right")
@@ -129,9 +131,8 @@ https://wirelesspi.com/pulse-shaping-filter/
 """
 
 symbols_I = pulse_shaping.pulse_shaping(pulse_train, sps, fs, pulse_shape, alpha, L)
-
+print(f"Pulse Shape: {len(symbols_I)}")
 testpacket = symbols_I
-
 plt.stem(symbols_I, 'ko')
 plt.title("After pulse shaping")
 plt.show()
@@ -183,6 +184,7 @@ phase_noise_strength = 0.1
 phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random imaginary phase noise
 testpacket = np.add(testpacket, awgn_complex_samples)
 testpacket = np.multiply(testpacket, phase_noise_samples)
+print(f"Noise: {len(testpacket)}")
 #################################
 # Add fractional delay
 
@@ -191,7 +193,6 @@ delay = 0.4 # fractional delay, in samples
 N = 21 # number of taps
 n = np.arange(-N//2, N//2) # ...-3,-2,-1,0,1,2,3...
 h = np.sinc(n - delay) # calc filter taps
-print(f"sinc: {n - delay}")
 h *= np.hamming(N) # window the filter to make sure it decays to 0 on both sides
 h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
 testpacket = np.convolve(testpacket, h) # apply filter
@@ -203,10 +204,10 @@ fs = 2.45e9 # arbitrary UHF frequency
 fo = 61250 # Simulated frequency offset
 Ts = 1/fs # calc sample period
 t = np.arange(0, Ts*(len(testpacket)), Ts) # create time vector
-testpacket = testpacket * np.exp(1j*2*np.pi*fo*t) # perform freq shift
-
+testpacket = testpacket * np.exp(1j*2*np.pi*fo* t) # perform freq shift
+print(f"After Freq Offset: {len(testpacket)}")
 plt.stem(symbols_I, label="Original Pulse Shaped Waveform")
-plt.stem(testpacket, 'ro', label="Non-ideal Waveform")
+plt.stem(np.real(testpacket), 'ro', label="Non-ideal Waveform")
 plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform")
 plt.title("After fractional delay and frequency offset")
 plt.legend(loc="upper left")
@@ -242,6 +243,7 @@ https://wirelesspi.com/phase-locked-loop-pll-for-symbol-timing-recovery/
 """
 
 samples_interpolated = signal.resample_poly(testpacket, 16, 1)
+print(f"samples_interpolated: {len(samples_interpolated)}")
 plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
 plt.title("After interpolation")
 plt.legend(loc="upper left")
@@ -265,9 +267,10 @@ while i_out < len(testpacket) and i_in+16 < len(testpacket):
     mu = mu - np.floor(mu) # remove the integer part of mu
     i_out += 1 # increment output index
 out = out[2:i_out] # remove the first two, and anything after i_out (that was never filled out)
+
 testpacket = out # only include this line if you want to connect this code snippet with the Costas Loop later on
 
-
+print(f"After Clock Recovery: {len(testpacket)}")
 plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.stem(np.real(testpacket), 'ro', label="Real Part of Clock Recovered Waveform")
 plt.stem(np.imag(testpacket), 'mo', label="Imaginary Part of Clock Recovered Waveform")
@@ -301,6 +304,7 @@ plt.plot(f, psd)
 plt.title("Frequency offset before correction")
 plt.show()
 
+print(f"Coarse Frequency: {len(testpacket)}")
 # Plot
 plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.stem(np.real(testpacket), label="Real Part of Recovered Waveform")
@@ -351,12 +355,13 @@ for i in range(N):
         phase += 2*np.pi
 
 # Plot freq over time to see how long it takes to hit the right offset
+print(f"freq_log: {len(freq_log)}")
 plt.plot(freq_log,'.-')
 plt.title("Estimated frequency offset of Costas Loop vs Sample index")
 plt.show()
 
 testpacket = out
-
+print(f"Costas: {len(testpacket)}")
 plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.stem(np.real(testpacket), label="Real Part of Recovered Waveform")
 plt.stem(np.imag(testpacket), 'ro', label="Imaginary Part of Recovered Waveform")
@@ -383,6 +388,7 @@ distorts the data, this puts it back to relatively
 a circle. It is visualized better with QPSK schemes.
 """
 testpacket = IQ_Imbalance_Correct(testpacket, mean_period=(len(testpacket)//2)) # mean_period adjusts how many values it should take the mean of in each direction of an array for a given value.
+print(f"IQ Imbalance: {len(testpacket)}")
 PlotWave(testpacket)
 ShowConstellationPlot(testpacket)
 #------------------------------------------------
@@ -414,9 +420,10 @@ for symbol in testpacket:
     out = np.append(out, symbol)
 
 crosscorr = signal.fftconvolve(out,matched_filter_coef)
+print(f"Crosscorr: {len(crosscorr)}")
 plt.stem(np.real(testpacket), label="Recovered Waveform")
 plt.stem(preamble, 'r', label="Preamble Sequence")
-plt.stem(crosscorr, 'g', label="Crosscorrelation")
+plt.stem(np.real(crosscorr), 'g', label="Crosscorrelation")
 plt.title("Frame Synchronization: Crosscorrelation")
 plt.legend(loc="upper right")
 plt.show()
@@ -429,7 +436,7 @@ idx = np.array(crosscorr).argmax()
 
 recoveredPayload = testpacket[idx-len(preamble)+1:idx+len(data_encoded)+1] # Reconstruct original packet minus preamble
 recoveredData = recoveredPayload[len(preamble):]
-
+print(f"Recovered Payload: {len(recoveredPayload)}")
 # Plot
 plt.stem(np.real(recoveredPayload), label="Recovered Payload")
 plt.stem(np.imag(recoveredPayload), 'ro')
@@ -469,6 +476,8 @@ http://www.sunshine2k.de/articles/coding/crc/understanding_crc.html
 """
 
 demod_bits = demod.symbol_demod(recoveredData, scheme, 1, len(preamble)) # gain has to be set to 1
+print(f"Demod Bits: {len(demod_bits)}")
+print(f"Data: {len(data)}")
 error = CRC.CRCcheck(demod_bits, CRC_key)
 print("CRC error: " + str(error))
 

@@ -1,6 +1,6 @@
 // CRC.h
 // Rylan Paul
-#include "CRC.c"
+#include "src/CRC.c"
 // CRC
 
 // CRC_xor 
