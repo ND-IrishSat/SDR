@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//#include "../standardArray.h" //! remove on build
+#include "../standardArray.h"
 
 // Function prototypes
 Array_Tuple pulse_shaping(Array_Tuple a, int M, double fs, char pulse_shape[], double alpha, int L);

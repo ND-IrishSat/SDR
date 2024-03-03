@@ -2,7 +2,7 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 
-path = "Sidekiq Z2/CTranslation/lib/graphs/"
+path = ""
 
 def ShowConstellationPlot(packet, mag=999, title="After IQ Imbalance Correction"):
     x = []
@@ -64,10 +64,7 @@ if __name__ == "__main__":
     preamble = documentToArray("preamble.txt")
     bits = documentToArray("bits.txt")
     pulse_train = documentToArray("pulsetrain.txt")
-    print(f"Preamble: {len(preamble)}")
-    print(f"Bits: {len(bits)}")
     # Pulse Train
-    print(f"Pulse Train: {len(pulse_train)}")
     plt.stem(pulse_train, label="Pulse Train")
     plt.stem(bits, 'ro', label="Original Bits")
     plt.legend(loc="upper right")
@@ -79,24 +76,10 @@ if __name__ == "__main__":
     plt.stem(np.real(symbols_I), 'ko')
     plt.title("After pulse shaping")
     plt.show()
-    ShowConstellationPlot(symbols_I, title="C PulseShape")
-    #Noise
-    test = documentToArray("test.txt")
-    ShowConstellationPlot(test, title="C AWGN")
-
-    testpacket = documentToArray("noise.txt")
-    print(f"Noise: {len(testpacket)}")
-    ShowConstellationPlot(testpacket, title="C Noise")
+    #noise
+    packet = documentToArray("noise.txt")
+    ShowConstellationPlot(packet, title="C Noise")
     #After Freq Offset
-    #* HERE
-    h = documentToArray("h_simulationchannel.txt")
-    plt.stem(h, 'bo', label="Original Pulse Shaped Waveform")
-    plt.title("C Simulation Channel h")
-    plt.legend(loc="upper left")
-    plt.show()
-    simulationchannel = documentToArray("simulationchannel.txt")
-    ShowConstellationPlot(simulationchannel, title="C Simulation Channel")
-
     testpacket = documentToArray("testpacketfreqshift.txt")
     print(f"After Freq Offset: {len(testpacket)}")
     plt.stem(np.real(symbols_I), label="Original Pulse Shaped Waveform")
@@ -125,14 +108,7 @@ if __name__ == "__main__":
     plt.show()
 
     #Coarse Frequency Detection and Correction
-    psd = documentToArray("psd_coarseFrequencyCorrection.txt")
-    f = documentToArray("f_coarseFrequencyCorrection.txt")
-    plt.plot(f, psd)
-    plt.title("Frequency offset before correction")
-    plt.show()
     testpacket = documentToArray("coarseFrequencyCorrection.txt")
-    print(f"Coarse Frequency: {len(testpacket)}")
-    # Plot
     plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
     plt.stem(np.real(testpacket), label="Real Part of Recovered Waveform")
     plt.stem(np.imag(testpacket), 'ro', label="Imaginary Part of Recovered Waveform")
@@ -146,6 +122,7 @@ if __name__ == "__main__":
     plt.plot(freq_log,'.-')
     plt.title("Estimated frequency offset of Costas Loop vs Sample index")
     plt.show()
+
     testpacket = documentToArray("costasout.txt")
     print(f"Costas: {len(testpacket)}")
     plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
@@ -188,8 +165,6 @@ if __name__ == "__main__":
     
     demod_bits = documentToArray("demodbits.txt")
     data = documentToArray("data.txt")
-    print(f"Demod Bits: {len(demod_bits)}")
-    print(f"Data: {len(data)}")
 
     # This just calculates how many bits were correctly received
     num_correct = 0

@@ -5,9 +5,7 @@
 #include <complex.h>
 #include <math.h>
 #include <string.h>
-//#include "../standardArray.h" //TODO: remove on build
-/* baseband_symbols holds the received symbols after they have been passed through comms channel (represented by I Q component)
-  scheme[] specifies type of modulation scheme used */
+#include "../standardArray.h"
 
 Array_Tuple symbol_demod(Complex_Array_Tuple baseband_symbols_complex, char scheme[], double channel_gain, double preamble_len)
 {
@@ -76,6 +74,11 @@ Array_Tuple symbol_demod(Complex_Array_Tuple baseband_symbols_complex, char sche
     freeArrayMemory(abs_baseband_symbols_1);
     freeArrayMemory(abs_baseband_symbols_2);
   }
+  else{
+    printf("QPSK is not suppported yet, see commented code below");
+  }
+  return a_demodulated;
+}
   /*
   if (strcmp(scheme, "QPSK") == 0)
   {
@@ -382,5 +385,4 @@ Array_Tuple symbol_demod(Complex_Array_Tuple baseband_symbols_complex, char sche
   
 
 */
-  return a_demodulated;
-}
+//}

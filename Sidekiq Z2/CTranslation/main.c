@@ -3,30 +3,20 @@ main.c
 IrishSAT CLOVER SDR
 February 2024
 Rylan Paul
-
 Notes:
-- For memory leaks, every function that returns a pointer using malloc() or calloc(), mark with //! Returns a calloc ptr
-            - For vscode, install the better comments extension, then you will see comments starting with ! in bright red
+    • link flag -lfftw3, run: brew install fftw // to install library for mac
+            • for windows: http://www.fftw.org/install/windows.html
 */
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <stdbool.h>
 #include <complex.h>
-// Our libraries --------------------------------
-#include "lib/standardArray.h" //#include <fftw3.h> //link flag -lfftw3, run: brew install fftw // to install library
-#include "lib/CRC.h"
-#include "lib/iq_imbalance.h"
-#include "lib/src/pulse_shaping.c"
-#include "lib/src/symbol_demod_QAM.c"
-//-----------------------------------------------
 
+// Our libraries --------------------------------
+#include "lib/irishsat_comms_lib.h" 
+//-----------------------------------------------
 
 // * Function Prototypes ------------------------
 Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double fs, char pulse_shape[], double alpha, int L);
-Complex_Array_Tuple generateNoise(Complex_Array_Tuple testpacket);
 Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
 Complex_Array_Tuple clock_Recovery(Complex_Array_Tuple testpacket, int sps);
 Complex_Array_Tuple coarse_Frequency_Correction(Complex_Array_Tuple testpacket, double fs);
@@ -36,10 +26,9 @@ Array_Tuple demodulation(Complex_Array_Tuple recoveredData, char scheme[], Array
 void DisplayOutput(Array_Tuple data, Array_Tuple demod_bits);
 // ----------------------------------------------
 
-
 int main(){
     // *DECLARE VARIABLES --------------
-    const int data_length = 30;
+    const int data_length = 256;
     double fs = 2.4e9; // carrier frequency 
     double Ts = 1.0 / fs; // sampling period in seconds
     double f0 = 0.0; // homodyne (0 HZ IF)
@@ -60,51 +49,71 @@ int main(){
     Array_Tuple bits = append_array(preamble, data_encoded);
     exportArray(bits, "bits.txt");
     Array_Tuple matched_filter_coef = flip(preamble);
-
-
+    
     // *Generation of Pulse Train
     Array_Tuple pulse_train = pulsetrain(bits, sps);
     exportArray(pulse_train, "pulsetrain.txt");
+    freeArrayMemory(bits);
 
     // *Pulse Shaping
     Complex_Array_Tuple complexTestpacket = pulse_Shaping_Main(pulse_train, sps, fs, pulse_shape, alpha, L);
     exportComplexArray(complexTestpacket, "pulseshaping.txt");
+    freeArrayMemory(pulse_train);
 
     //#############################################################################################
     // *----TRANSMISSION and Noise----
-    Complex_Array_Tuple testpacket_noise = generateNoise(complexTestpacket);
+    double std_dev = 1; // typically 1
+    double phase_noise_stength = 0.2; // typically 0.1
+    double noise_power = 10; // typically ~10
+    Complex_Array_Tuple testpacket_noise = generateComplexNoise(complexTestpacket, std_dev, phase_noise_stength, noise_power);
     exportComplexArray(testpacket_noise, "noise.txt");
+    freeComplexArrayMemory(complexTestpacket);
     //#############################################################################################
 
     // *Simulation of Channel
     fs = 2.45e9; // arbitrary UHF frequency
     Complex_Array_Tuple testpacket_freq_shift = simulation_Channel(testpacket_noise, fs, Ts);
     exportComplexArray(testpacket_freq_shift, "testpacketfreqshift.txt");
+    freeComplexArrayMemory(testpacket_noise);
 
     // *Clock Recovery
     Complex_Array_Tuple testpacket = clock_Recovery(testpacket_freq_shift, sps);
     exportComplexArray(testpacket, "clockRecovery.txt");
+    freeComplexArrayMemory(testpacket_freq_shift);
 
     // *Coarse Frequency Correction
     Complex_Array_Tuple new_testpacket = coarse_Frequency_Correction(testpacket, fs);
     exportComplexArray(new_testpacket, "coarseFrequencyCorrection.txt");
+    freeComplexArrayMemory(testpacket);
 
     // *Fine Frequency Correction
     Complex_Array_Tuple costas_out = fine_Frequency_Correction(new_testpacket, fs);
     exportComplexArray(costas_out, "costasout.txt");
+    freeComplexArrayMemory(new_testpacket);
 
     // *IQ Imbalance Correction
     int mean_period = 100;
     Complex_Array_Tuple testpacket_IQ_Imbalance_Correct = IQImbalanceCorrect(costas_out, mean_period); //TODO clean function
     exportComplexArray(testpacket_IQ_Imbalance_Correct, "iqimbalanceout.txt");
+    freeComplexArrayMemory(costas_out);
     // *Frame Sync
     Complex_Array_Tuple recoveredData = frame_Sync(testpacket_IQ_Imbalance_Correct, matched_filter_coef, preamble, data_encoded); //TODO clean function
+    freeComplexArrayMemory(testpacket_IQ_Imbalance_Correct);
     // exports inside function
     // *Demodulation
     Array_Tuple demod_bits = demodulation(recoveredData, scheme, preamble, CRC_key); //TODO clean function
     exportArray(demod_bits, "demodbits.txt");
+    freeComplexArrayMemory(recoveredData);
     // *Display Output
     DisplayOutput(data, demod_bits);
+    
+    
+    freeArrayMemory(demod_bits);
+    freeArrayMemory(preamble);
+    freeArrayMemory(CRC_key);
+    freeArrayMemory(data);
+    freeArrayMemory(data_encoded);
+    freeArrayMemory(matched_filter_coef);
 
     return 0;
 }
@@ -116,46 +125,6 @@ Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double 
     Array_Tuple imajtestpacket = zerosArray(testpacket_pulseshape.length);
     Complex_Array_Tuple complexTestpacket = {testpacket_pulseshape, imajtestpacket};
     return complexTestpacket;
-}
-Complex_Array_Tuple generateNoise(Complex_Array_Tuple testpacket){
-    // vars
-    double mean = 0;
-    double std_dev = 0.1;
-    int num_samples = testpacket.real.length;
-
-    double phase_noise_strength = 0.1;
-    double noise_power = 10;
-
-    // creating general normal distribution random arrays for real and complex
-    Complex_Array_Tuple out = zerosComplex(num_samples);
-    Complex_Array_Tuple testing = zerosComplex(num_samples);
-    for (int i = 0; i < num_samples; i++)
-    {
-
-        double real = testpacket.real.array[i];
-        double imaj = testpacket.imaginary.array[i];
-
-        double x = rand_norm(mean, std_dev);
-        double x_2 = x / sqrt(2.0);
-        double x_3 = x_2 / sqrt(noise_power);
-
-        double y = rand_norm(mean, std_dev);
-        double y_2 = y / sqrt(2.0);
-        double y_3 = y_2 / sqrt(noise_power);
-
-        double complex awgn_noise = x_3 + I*y_3;
-
-        double complex phase_noise = cexp( I * (rand_norm(mean, std_dev) * phase_noise_strength) );
-        double complex packet_complex = real + I * imaj;
-        double complex out_packet = (packet_complex + awgn_noise) * phase_noise;
-
-        testing.real.array[i] = creal(awgn_noise);
-        testing.imaginary.array[i] = cimag(awgn_noise);
-        out.real.array[i] = creal(out_packet);
-        out.imaginary.array[i] = cimag(out_packet);
-    }
-    exportComplexArray(testing, "test.txt");
-    return out;
 }
 Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
     // Add fractional delay
@@ -169,10 +138,7 @@ Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, dou
     Array_Tuple temp2 = multiplyArrays(h, ham); // window the filter to make sure it decays to 0 on both sides
     double h_sum = sumArray(temp2);
     Array_Tuple new_h = divideDoubleFromArray(temp2, h_sum); // normalize to get unity gain, we don't want to change the amplitude/power
-    //TODO: One value off somewhere
-    exportArray(new_h, "h_simulationchannel.txt");
     Complex_Array_Tuple testpacket = convolve(testpacket_noise, new_h); // apply filter
-    exportComplexArray(testpacket, "simulationchannel.txt");
     // apply a freq offset
     int fo = 61250; // Simulated frequency offset
     Ts = (double) 1 / fs; // calc sample period
@@ -256,26 +222,20 @@ Complex_Array_Tuple clock_Recovery(Complex_Array_Tuple testpacket, int sps){
 Complex_Array_Tuple coarse_Frequency_Correction(Complex_Array_Tuple testpacket, double fs){
     Complex_Array_Tuple fft_samples = multiplyComplexArrays(testpacket, testpacket);
 
-    //psd = np.fft.fftshift(np.abs(np.fft.fft(fft_samples)))
     Complex_Array_Tuple tempfft = fft(fft_samples);
     Array_Tuple tempAbs = absComplexArray(tempfft);
     Array_Tuple psd = fftshift(tempAbs);
-    exportArray(psd, "psd_coarseFrequencyCorrection.txt");
 
     //f = np.linspace(-fs/2.0, fs/2.0, len(psd))
     Array_Tuple f = linspace(-fs/2.0, fs/2.0, psd.length);
-    exportArray(f, "f_coarseFrequencyCorrection.txt");
 
     //max_freq = f[np.argmax(psd)]
     int psd_argMax = argMax(psd);
     double max_freq = f.array[psd_argMax];
 
     double Ts = 1.0/fs; // calc sample period
-    //t = np.arange(0, Ts*len(testpacket), Ts) # create time vector
     Array_Tuple t_coarse = arange(0, Ts * testpacket.real.length, Ts);
-    //testpacket = testpacket * np.exp(-1j*2*np.pi*max_freq*t/2.0) # multiply by negative complex sinusoid at offset frequency
-    double* empty_real = (double*)calloc(t_coarse.length, sizeof(double));
-    Array_Tuple empty_real_tuple = {empty_real, t_coarse.length};
+    Array_Tuple empty_real_tuple = zerosArray(t_coarse.length);
     for (int i = 0; i < t_coarse.length; i++)
     {
         double temp_value = 2 * M_PI * max_freq * t_coarse.array[i] / 2.0;
@@ -302,7 +262,6 @@ Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket
     int N = new_testpacket.real.length;
     double phase = 0;
     double freq = 0;
-    // These next two params are what to adjust, to make the feedback loop faster or slower (which impacts stability) //! these can and should be adjusted to see what works
     //out = np.zeros(N, dtype=complex)
     Complex_Array_Tuple costas_out = zerosComplex(N);
     //freq_log = []
@@ -337,7 +296,6 @@ Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket
     free(freq_log);
     //testpacket = costas_out
 
-    // Testing frequency correction //! graphing only
     // fft_samples = testpacket**2
     Complex_Array_Tuple fft_samples_freq = multiplyComplexArrays(costas_out, costas_out);
     // psd = np.fft.fftshift(np.abs(np.fft.fft(fft_samples)))
@@ -373,8 +331,7 @@ Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple match
     Complex_Array_Tuple crosscorr = convolve(out_frame_sync, matchedFilterCoef);
     exportComplexArray(crosscorr, "crosscorr.txt");
     //idx = np.array(crosscorr).argmax()
-    Array_Tuple crosscorr_abs = absComplexArray(crosscorr);
-    int idx = argMax(crosscorr_abs);
+    int idx = argComplexMax(crosscorr);
     //recoveredPayload = testpacket[idx-len(preamble)+1:idx+len(data_encoded)+1] # Reconstruct original packet minus preamble
     int start = idx - preamble.length + 1;
     int end = idx + data_encoded.length + 1;
@@ -383,8 +340,8 @@ Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple match
     for (int i = start; i < end; i++)
     {
         int index = i - start;
-        recoveredPayload.real.array[index] = out_frame_sync.real.array[i];
-        recoveredPayload.imaginary.array[index] = out_frame_sync.imaginary.array[i];
+        recoveredPayload.real.array[index] = testpacket.real.array[i];
+        recoveredPayload.imaginary.array[index] = testpacket.imaginary.array[i];
     }
     exportComplexArray(recoveredPayload, "recoveredPayload.txt");
     //recoveredData = recoveredPayload[len(preamble):]
@@ -402,10 +359,9 @@ Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple match
 
     freeArrayMemory(abs_IQ_correct);
     freeComplexArrayMemory(crosscorr);
-    freeArrayMemory(crosscorr_abs);
     freeComplexArrayMemory(out_frame_sync);
     freeComplexArrayMemory(recoveredPayload);
-    return recoveredData; 
+    return recoveredData;
 }
 Array_Tuple demodulation(Complex_Array_Tuple recoveredData, char scheme[], Array_Tuple preamble, Array_Tuple CRC_key){
     Array_Tuple demod_bits = symbol_demod(recoveredData, scheme, 1, preamble.length); // gain has to be set to 1
