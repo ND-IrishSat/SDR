@@ -10,11 +10,9 @@ Notes:
 #include <stdio.h>
 #include <math.h>
 #include <complex.h>
-
 // Our libraries --------------------------------
 #include "lib/irishsat_comms_lib.h" 
 //-----------------------------------------------
-
 // * Function Prototypes ------------------------
 Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double fs, char pulse_shape[], double alpha, int L);
 Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
@@ -38,7 +36,6 @@ int main(){
     char scheme[] = "BPSK"; // Modulation scheme 'OOK', 'QPSK', or 'QAM'
     double alpha = 0.5; // roll-off factor of the RRC pulse-shaping filter
     int sps = M; // samples per symbol, equal to oversampling factor
-
     // *Preamble, Data, and Matched Filter Coefficient Generation--------------
     Array_Tuple preamble = defineArray((double[]){0,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,1,0}, 60);// optimal periodic binary code for N = 63 https://ntrs.nasa.gov/citations/19800017860
     exportArray(preamble, "preamble.txt");
@@ -50,15 +47,18 @@ int main(){
     exportArray(bits, "bits.txt");
     Array_Tuple matched_filter_coef = flip(preamble);
     
+
     // *Generation of Pulse Train
     Array_Tuple pulse_train = pulsetrain(bits, sps);
     exportArray(pulse_train, "pulsetrain.txt");
     freeArrayMemory(bits);
 
+
     // *Pulse Shaping
     Complex_Array_Tuple complexTestpacket = pulse_Shaping_Main(pulse_train, sps, fs, pulse_shape, alpha, L);
     exportComplexArray(complexTestpacket, "pulseshaping.txt");
     freeArrayMemory(pulse_train);
+
 
     //#############################################################################################
     // *----TRANSMISSION and Noise----
@@ -70,40 +70,51 @@ int main(){
     freeComplexArrayMemory(complexTestpacket);
     //#############################################################################################
 
+
     // *Simulation of Channel
     fs = 2.45e9; // arbitrary UHF frequency
     Complex_Array_Tuple testpacket_freq_shift = simulation_Channel(testpacket_noise, fs, Ts);
     exportComplexArray(testpacket_freq_shift, "testpacketfreqshift.txt");
     freeComplexArrayMemory(testpacket_noise);
 
+
     // *Clock Recovery
     Complex_Array_Tuple testpacket = clock_Recovery(testpacket_freq_shift, sps);
     exportComplexArray(testpacket, "clockRecovery.txt");
     freeComplexArrayMemory(testpacket_freq_shift);
+
 
     // *Coarse Frequency Correction
     Complex_Array_Tuple new_testpacket = coarse_Frequency_Correction(testpacket, fs);
     exportComplexArray(new_testpacket, "coarseFrequencyCorrection.txt");
     freeComplexArrayMemory(testpacket);
 
+
     // *Fine Frequency Correction
     Complex_Array_Tuple costas_out = fine_Frequency_Correction(new_testpacket, fs);
     exportComplexArray(costas_out, "costasout.txt");
     freeComplexArrayMemory(new_testpacket);
+
 
     // *IQ Imbalance Correction
     int mean_period = 100;
     Complex_Array_Tuple testpacket_IQ_Imbalance_Correct = IQImbalanceCorrect(costas_out, mean_period); //TODO clean function
     exportComplexArray(testpacket_IQ_Imbalance_Correct, "iqimbalanceout.txt");
     freeComplexArrayMemory(costas_out);
+
+
     // *Frame Sync
     Complex_Array_Tuple recoveredData = frame_Sync(testpacket_IQ_Imbalance_Correct, matched_filter_coef, preamble, data_encoded); //TODO clean function
     freeComplexArrayMemory(testpacket_IQ_Imbalance_Correct);
-    // exports inside function
+    
+
+
     // *Demodulation
     Array_Tuple demod_bits = demodulation(recoveredData, scheme, preamble, CRC_key); //TODO clean function
     exportArray(demod_bits, "demodbits.txt");
     freeComplexArrayMemory(recoveredData);
+
+    
     // *Display Output
     DisplayOutput(data, demod_bits);
     
