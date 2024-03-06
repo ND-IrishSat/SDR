@@ -27,7 +27,7 @@ void DisplayOutput(Array_Tuple data, Array_Tuple demod_bits);
 int main(){
     // *DECLARE VARIABLES --------------
     const int data_length = 256;
-    double fs = 2.4e9; // carrier frequency 
+    double fs = 2.38e9; // carrier frequency not 2.4e9!!!!
     double Ts = 1.0 / fs; // sampling period in seconds
     double f0 = 0.0; // homodyne (0 HZ IF)
     int M = 8; // oversampling factor
