@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <complex.h>
+#include <time.h>
 
 // checks if double is an integer
 bool isInteger(double val)
@@ -150,6 +151,12 @@ double meanArrayTuple(Array_Tuple array){
 }
 // Generates a random pointer to an array
 double * randomArray(int max_exclusive, int length){ 
+    static int b = 1;
+    if (b == 1){
+        b = 0;
+        time_t t;
+        srand((unsigned) time(&t));
+    }
     double* arr; // Assuming maximum length of the array
     arr = (double*)calloc(length, sizeof(double));
     for (int i=0; i < length; i++){

@@ -64,7 +64,7 @@ int main(){
     // *----TRANSMISSION and Noise----
     double std_dev = 1; // typically 1
     double phase_noise_stength = 0.2; // typically 0.1
-    double noise_power = 10; // typically ~10
+    double noise_power = 1000; // typically ~10
     Complex_Array_Tuple testpacket_noise = generateComplexNoise(complexTestpacket, std_dev, phase_noise_stength, noise_power);
     exportComplexArray(testpacket_noise, "noise.txt");
     freeComplexArrayMemory(complexTestpacket);
