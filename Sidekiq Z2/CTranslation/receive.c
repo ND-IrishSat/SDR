@@ -14,7 +14,7 @@ Notes:
 #include "lib/irishsat_comms_lib.h" 
 //-----------------------------------------------
 // * Function Prototypes ------------------------
-Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
+Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
 Complex_Array_Tuple clock_Recovery(Complex_Array_Tuple testpacket, int sps);
 Complex_Array_Tuple coarse_Frequency_Correction(Complex_Array_Tuple testpacket, double fs);
 Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket, double fs);
@@ -41,7 +41,7 @@ int main(){
     //* ################ testpacket_receive ########
 
     // *Simulation of Channel
-    Complex_Array_Tuple testpacket_freq_shift = simulation_Channel(testpacket_receive, fs, Ts);
+    Complex_Array_Tuple testpacket_freq_shift = fractional_delay_frequency_offset(testpacket_receive, fs, Ts);
     exportComplexArray(testpacket_freq_shift, "testpacketfreqshift.txt");
     freeComplexArrayMemory(testpacket_receive);
 
@@ -94,7 +94,7 @@ int main(){
 
     return 0;
 }
-Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
+Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
     // Add fractional delay
     // Create and apply fractional delay filter
     double delay = 0.4; // fractional delay, in samples

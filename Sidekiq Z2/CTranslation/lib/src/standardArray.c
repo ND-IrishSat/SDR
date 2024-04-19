@@ -656,3 +656,47 @@ void exportComplexArray(Complex_Array_Tuple input, char filename[]){
     fclose(fpt);
 }
 
+void complexArrayToCharArray(Complex_Array_Tuple array) {
+    char input[90000];
+    int length = 0;
+    for (int i = 0; i < array.real.length; i++)
+    {
+        char buffer_real[25];
+        sprintf(buffer_real, "%.6f", array.real.array[i]);
+        char buffer_imag[25];
+        sprintf(buffer_imag, "%.6f", array.imaginary.array[i]);
+        int x = 0;
+        while(buffer_real[x] != '\0'){
+            input[length] = buffer_real[x];
+            length++;
+            x++;
+        }
+        input[length] = ',';
+        length++;
+        x = 0;
+        while(buffer_imag[x] != '\0'){
+            input[length] = buffer_imag[x];
+            length++;
+            x++;
+        }
+        input[length] = ',';
+        length++;
+    }
+    input[length] = '\0';
+    length++;
+    printf("%s", input);
+    printf("\nLength: %d\n", length);
+}
+
+Complex_Array_Tuple charArrayToComplexArray(char *str){
+    double *real = (double*)malloc(256 * sizeof(double));
+    double *imag = (double*)malloc(256 * sizeof(double));
+
+    for (int i = 0; i < strlen(str); i++)
+    {
+        /* code */
+        printf("Hi");
+    }
+    
+
+}

@@ -178,7 +178,7 @@ phase_noise_strength = 0.1
 phase_noise_samples = np.exp(1j * (np.random.randn(num_samples)*phase_noise_strength)) # adds random imaginary phase noise
 testpacket = np.add(testpacket, awgn_complex_samples)
 testpacket = np.multiply(testpacket, phase_noise_samples)
-ShowConstellationPlot(testpacket, title="Python Noise")
+#ShowConstellationPlot(testpacket, title="Python Noise")
 #################################
 # Add fractional delay
 
@@ -200,8 +200,8 @@ Ts = 1/fs # calc sample period
 t = np.arange(0, Ts*(len(testpacket)), Ts) # create time vector
 testpacket = testpacket * np.exp(1j*2*np.pi*fo* t) # perform freq shift
 plt.stem(symbols_I, label="Original Pulse Shaped Waveform")
-plt.stem(np.real(testpacket), 'ro', label="Non-ideal Waveform")
-plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform")
+plt.stem(np.real(testpacket), 'ro', label="Non-ideal Waveform Real")
+plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform Imaginary")
 plt.title("After fractional delay and frequency offset")
 plt.legend(loc="upper left")
 plt.show()
@@ -236,10 +236,10 @@ https://wirelesspi.com/phase-locked-loop-pll-for-symbol-timing-recovery/
 """
 
 samples_interpolated = signal.resample_poly(testpacket, 16, 1)
-plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
-plt.title("After interpolation")
-plt.legend(loc="upper left")
-plt.show()
+# plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
+# plt.title("After interpolation")
+# plt.legend(loc="upper left")
+# plt.show()
 
 mu = 0 # initial estimate of phase of sample
 out = np.zeros(len(testpacket) + 10, dtype=complex)
@@ -262,7 +262,7 @@ out = out[2:i_out] # remove the first two, and anything after i_out (that was ne
 
 testpacket = out # only include this line if you want to connect this code snippet with the Costas Loop later on
 
-plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
+#plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.stem(np.real(testpacket), 'ro', label="Real Part of Clock Recovered Waveform")
 plt.stem(np.imag(testpacket), 'mo', label="Imaginary Part of Clock Recovered Waveform")
 plt.title("After clock recovery")
@@ -292,7 +292,7 @@ t = np.arange(0, Ts*len(testpacket), Ts) # create time vector
 testpacket = testpacket * np.exp(-1j*2*np.pi*max_freq*t/2.0) # multiply by negative complex sinusoid at offset frequency
 
 # Plot
-plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
+#plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.stem(np.real(testpacket), label="Real Part of Recovered Waveform")
 plt.stem(np.imag(testpacket), 'ro', label="Imaginary Part of Recovered Waveform")
 plt.legend(loc="upper left")
@@ -321,8 +321,8 @@ N = len(testpacket)
 phase = 0
 freq = 0
 # These next two params are what to adjust, to make the feedback loop faster or slower (which impacts stability)
-alpha = 0.132 # how fast phase updates
-beta = 0.00932 # how fast frequency updates
+alpha = 0.0000132 # how fast phase updates
+beta = 0.0000932 # how fast frequency updates
 out = np.zeros(N, dtype=complex)
 freq_log = []
 for i in range(N):
@@ -371,9 +371,10 @@ Without IQ imbalance correcion, the phase noise
 distorts the data, this puts it back to relatively
 a circle. It is visualized better with QPSK schemes.
 """
+ShowConstellationPlot(testpacket, mag=1, title="Before IQ Imbalance Correction")
 testpacket = IQ_Imbalance_Correct(testpacket, mean_period=(len(testpacket)//2)) # mean_period adjusts how many values it should take the mean of in each direction of an array for a given value.
-PlotWave(testpacket)
-ShowConstellationPlot(testpacket)
+#PlotWave(testpacket)
+ShowConstellationPlot(testpacket, mag=1, title="After IQ Imbalance Correction")
 #------------------------------------------------
 
 """
@@ -418,8 +419,8 @@ idx = np.array(crosscorr).argmax()
 recoveredPayload = testpacket[idx-len(preamble)+1:idx+len(data_encoded)+1] # Reconstruct original packet minus preamble
 recoveredData = recoveredPayload[len(preamble):]
 # Plot
-plt.stem(np.real(recoveredPayload), label="Recovered Payload")
-plt.stem(np.imag(recoveredPayload), 'ro')
+plt.stem(np.real(recoveredPayload), label="Recovered Payload Real")
+plt.stem(np.imag(recoveredPayload), 'ro', label="Recovered Payload Imaginary")
 plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
 plt.title("Data recovery")
 plt.legend(loc="upper right")

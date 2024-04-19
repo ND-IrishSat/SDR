@@ -15,7 +15,7 @@ Notes:
 //-----------------------------------------------
 // * Function Prototypes ------------------------
 Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double fs, char pulse_shape[], double alpha, int L);
-Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
+Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
 Complex_Array_Tuple clock_Recovery(Complex_Array_Tuple testpacket, int sps);
 Complex_Array_Tuple coarse_Frequency_Correction(Complex_Array_Tuple testpacket, double fs);
 Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket, double fs);
@@ -63,8 +63,8 @@ int main(){
     //#############################################################################################
     // *----TRANSMISSION and Noise----
     double std_dev = 1; // typically 1
-    double phase_noise_stength = 0.2; // typically 0.1
-    double noise_power = 1000; // typically ~10
+    double phase_noise_stength = 0.1; // typically 0.1
+    double noise_power = 10; // typically ~10
     Complex_Array_Tuple testpacket_noise = generateComplexNoise(complexTestpacket, std_dev, phase_noise_stength, noise_power);
     exportComplexArray(testpacket_noise, "noise.txt");
     freeComplexArrayMemory(complexTestpacket);
@@ -73,7 +73,7 @@ int main(){
 
     // *Simulation of Channel
     fs = 2.45e9; // arbitrary UHF frequency
-    Complex_Array_Tuple testpacket_freq_shift = simulation_Channel(testpacket_noise, fs, Ts);
+    Complex_Array_Tuple testpacket_freq_shift = fractional_delay_frequency_offset(testpacket_noise, fs, Ts);
     exportComplexArray(testpacket_freq_shift, "testpacketfreqshift.txt");
     freeComplexArrayMemory(testpacket_noise);
 
@@ -137,7 +137,7 @@ Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double 
     Complex_Array_Tuple complexTestpacket = {testpacket_pulseshape, imajtestpacket};
     return complexTestpacket;
 }
-Complex_Array_Tuple simulation_Channel(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
+Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
     // Add fractional delay
     // Create and apply fractional delay filter
     double delay = 0.4; // fractional delay, in samples

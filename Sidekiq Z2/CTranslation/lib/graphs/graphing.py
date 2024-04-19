@@ -78,23 +78,23 @@ if __name__ == "__main__":
     plt.show()
     #noise
     packet = documentToArray("noise.txt")
-    ShowConstellationPlot(packet, title="C Noise")
+    #ShowConstellationPlot(packet, title="C Noise")
     #After Freq Offset
     testpacket = documentToArray("testpacketfreqshift.txt")
     print(f"After Freq Offset: {len(testpacket)}")
     plt.stem(np.real(symbols_I), label="Original Pulse Shaped Waveform")
-    plt.stem(np.real(testpacket), 'ro', label="Non-ideal Waveform")
-    plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform")
+    plt.stem(np.real(testpacket), 'ro', label="Non-ideal Waveform Real")
+    plt.stem(np.imag(testpacket), 'mo', label="Non-ideal Waveform Imaginary")
     plt.title("After fractional delay and frequency offset")
     plt.legend(loc="upper left")
     plt.show()
     #Clock Recovery — Interpolated
     samples_interpolated = documentToArray("samplesinterpolated.txt")
-    print(f"samples_interpolated: {len(samples_interpolated)}")
-    plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
-    plt.title("After interpolation")
-    plt.legend(loc="upper left")
-    plt.show()
+    # print(f"samples_interpolated: {len(samples_interpolated)}")
+    # plt.stem(np.real(samples_interpolated), 'bo', label="Non-ideal Interpolated Waveform")
+    # plt.title("After interpolation")
+    # plt.legend(loc="upper left")
+    # plt.show()
 
     #After Clock Recovery
     sps = 8
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     # IQ Imbalance correction
     testpacket = documentToArray("iqimbalanceout.txt")
     print(f"IQ Imbalance: {len(testpacket)}")
-    PlotWave(testpacket)
+    #PlotWave(testpacket)
     ShowConstellationPlot(testpacket)
 
     #Frame Sync
@@ -154,14 +154,14 @@ if __name__ == "__main__":
     plt.legend(loc="upper right")
     plt.show()
     # Plot
-    recoveredPayload = documentToArray("recoveredPayload.txt")
-    print(f"Recovered Payload: {len(recoveredPayload)}")
-    plt.stem(np.real(recoveredPayload), label="Recovered Payload")
-    plt.stem(np.imag(recoveredPayload), 'ro')
-    plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
-    plt.title("Data recovery")
-    plt.legend(loc="upper right")
-    plt.show()
+    # recoveredPayload = documentToArray("recoveredPayload.txt")
+    # print(f"Recovered Payload: {len(recoveredPayload)}")
+    # plt.stem(np.real(recoveredPayload), label="Recovered Payload")
+    # plt.stem(np.imag(recoveredPayload), 'ro')
+    # plt.stem(signal.upfirdn([1],pulse_train,1, sps), 'ko', label="Original Pulse Train")
+    # plt.title("Data recovery")
+    # plt.legend(loc="upper right")
+    # plt.show()
     
     demod_bits = documentToArray("demodbits.txt")
     data = documentToArray("data.txt")

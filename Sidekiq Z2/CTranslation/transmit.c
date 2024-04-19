@@ -51,10 +51,11 @@ int main(){
     freeArrayMemory(pulse_train);
 
     //*############## Transmit ################
-    // TCP_send_complex_array(complexTestpacket)
+    // socket_complex_array(complexTestpacket)
+    complexArrayToCharArray(complexTestpacket);
     //*############## complexTestpacket #######
 
-    printComplexArray("Transmitting", complexTestpacket);
+    //printComplexArray("Transmitting", complexTestpacket);
 
     freeArrayMemory(preamble);
     freeArrayMemory(CRC_key);

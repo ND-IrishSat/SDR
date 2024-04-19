@@ -71,4 +71,5 @@ Complex_Array_Tuple convolve(Complex_Array_Tuple a, Array_Tuple v);
 Complex_Array_Tuple convolveSame(Complex_Array_Tuple a, Array_Tuple v);
 void exportArray(Array_Tuple input, char filename[]);
 void exportComplexArray(Complex_Array_Tuple input, char filename[]);
+void complexArrayToCharArray(Complex_Array_Tuple array);
 #endif
