@@ -14,12 +14,11 @@ Notes:
 #include "lib/irishsat_comms_lib.h" 
 //-----------------------------------------------
 // * Function Prototypes ------------------------
-Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double fs, char pulse_shape[], double alpha, int L);
 Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts);
 Complex_Array_Tuple clock_Recovery(Complex_Array_Tuple testpacket, int sps);
 Complex_Array_Tuple coarse_Frequency_Correction(Complex_Array_Tuple testpacket, double fs);
 Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket, double fs);
-Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple matchedFilterCoef, Array_Tuple preamble, Array_Tuple data_encoded);
+Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple matchedFilterCoef, Array_Tuple preamble, int data_length);
 Array_Tuple demodulation(Complex_Array_Tuple recoveredData, char scheme[], Array_Tuple preamble, Array_Tuple CRC_key);
 void DisplayOutput(Array_Tuple data, Array_Tuple demod_bits);
 // ----------------------------------------------
@@ -27,55 +26,24 @@ void DisplayOutput(Array_Tuple data, Array_Tuple demod_bits);
 int main(){
     // *DECLARE VARIABLES --------------
     const int data_length = 256;
-    double fs = 2.38e9; // carrier frequency not 2.4e9!!!!
+    double fs = 2.45e9; // carrier frequency not 2.4e9!!!! // arbitrary UHF frequency
     double Ts = 1.0 / fs; // sampling period in seconds
-    double f0 = 0.0; // homodyne (0 HZ IF)
-    int M = 8; // oversampling factor
     int L = 8; // pulse shaping filter length (Is this the ideal length?)
-    char pulse_shape[] = "rrc"; // type of pulse shaping, also "rect"
-    char scheme[] = "BPSK"; // Modulation scheme 'OOK', 'QPSK', or 'QAM'
-    double alpha = 0.5; // roll-off factor of the RRC pulse-shaping filter
-    int sps = M; // samples per symbol, equal to oversampling factor
+    char scheme[] = "BPSK"; // Modulation scheme 'OOK', 'QPSK', or 'QAM' //! QAM is not built
+    int sps = 8; // samples per symbol, equal to oversampling factor
     // *Preamble, Data, and Matched Filter Coefficient Generation--------------
     Array_Tuple preamble = defineArray((double[]){0,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,1,0}, 60);// optimal periodic binary code for N = 63 https://ntrs.nasa.gov/citations/19800017860
-    exportArray(preamble, "preamble.txt");
-    Array_Tuple data = {randomArray(2,data_length), data_length}; // this points to the random array generated;  creates 256 random bits
-    exportArray(data, "data.txt");
     Array_Tuple CRC_key = defineArray((double[]){1,0,0,1,1,0,0,0,0,1,1,1}, 12);// Best CRC polynomials: https://users.ece.cmu.edu/~koopman/crc/
-    Array_Tuple data_encoded = CRC_encodeData(data, CRC_key);
-    Array_Tuple bits = append_array(preamble, data_encoded);
-    exportArray(bits, "bits.txt");
     Array_Tuple matched_filter_coef = flip(preamble);
-    
 
-    // *Generation of Pulse Train
-    Array_Tuple pulse_train = pulsetrain(bits, sps);
-    exportArray(pulse_train, "pulsetrain.txt");
-    freeArrayMemory(bits);
-
-
-    // *Pulse Shaping
-    Complex_Array_Tuple complexTestpacket = pulse_Shaping_Main(pulse_train, sps, fs, pulse_shape, alpha, L);
-    exportComplexArray(complexTestpacket, "pulseshaping.txt");
-    freeArrayMemory(pulse_train);
-
-
-    //#############################################################################################
-    // *----TRANSMISSION and Noise----
-    double std_dev = 1; // typically 1
-    double phase_noise_stength = 0.1; // typically 0.1
-    double noise_power = 10; // typically ~10
-    Complex_Array_Tuple testpacket_noise = generateComplexNoise(complexTestpacket, std_dev, phase_noise_stength, noise_power);
-    exportComplexArray(testpacket_noise, "noise.txt");
-    freeComplexArrayMemory(complexTestpacket);
-    //#############################################################################################
-
+    //* ################ Receive ###################
+    Complex_Array_Tuple testpacket_receive;
+    //* ################ testpacket_receive ########
 
     // *Simulation of Channel
-    fs = 2.45e9; // arbitrary UHF frequency
-    Complex_Array_Tuple testpacket_freq_shift = fractional_delay_frequency_offset(testpacket_noise, fs, Ts);
+    Complex_Array_Tuple testpacket_freq_shift = fractional_delay_frequency_offset(testpacket_receive, fs, Ts);
     exportComplexArray(testpacket_freq_shift, "testpacketfreqshift.txt");
-    freeComplexArrayMemory(testpacket_noise);
+    freeComplexArrayMemory(testpacket_receive);
 
 
     // *Clock Recovery
@@ -104,7 +72,7 @@ int main(){
 
 
     // *Frame Sync
-    Complex_Array_Tuple recoveredData = frame_Sync(testpacket_IQ_Imbalance_Correct, matched_filter_coef, preamble, data_encoded); //TODO clean function
+    Complex_Array_Tuple recoveredData = frame_Sync(testpacket_IQ_Imbalance_Correct, matched_filter_coef, preamble, data_length); //TODO clean function
     freeComplexArrayMemory(testpacket_IQ_Imbalance_Correct);
     
 
@@ -116,26 +84,15 @@ int main(){
 
     
     // *Display Output
-    DisplayOutput(data, demod_bits);
+    printArray("Out", demod_bits);
     
     
     freeArrayMemory(demod_bits);
     freeArrayMemory(preamble);
     freeArrayMemory(CRC_key);
-    freeArrayMemory(data);
-    freeArrayMemory(data_encoded);
     freeArrayMemory(matched_filter_coef);
 
     return 0;
-}
-
-// Functions --> Main Processes
-Complex_Array_Tuple pulse_Shaping_Main(Array_Tuple pulse_train, int sps, double fs, char pulse_shape[], double alpha, int L){
-    Array_Tuple testpacket_pulseshape = pulse_shaping(pulse_train, sps, fs, pulse_shape, alpha, L);
-    //printArray("testpacket_pulseshape", testpacket_pulseshape.array, testpacket_pulseshape.length);
-    Array_Tuple imajtestpacket = zerosArray(testpacket_pulseshape.length);
-    Complex_Array_Tuple complexTestpacket = {testpacket_pulseshape, imajtestpacket};
-    return complexTestpacket;
 }
 Complex_Array_Tuple fractional_delay_frequency_offset(Complex_Array_Tuple testpacket_noise, double fs, double Ts){
     // Add fractional delay
@@ -327,7 +284,7 @@ Complex_Array_Tuple fine_Frequency_Correction(Complex_Array_Tuple new_testpacket
 
     return costas_out;
 }
-Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple matchedFilterCoef, Array_Tuple preamble, Array_Tuple data_encoded){
+Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple matchedFilterCoef, Array_Tuple preamble, int data_length){
     Array_Tuple abs_IQ_correct = absComplexArray(testpacket);
     double scale = meanArrayTuple(abs_IQ_correct);
     Complex_Array_Tuple out_frame_sync = zerosComplex(testpacket.real.length);
@@ -345,7 +302,7 @@ Complex_Array_Tuple frame_Sync(Complex_Array_Tuple testpacket, Array_Tuple match
     int idx = argComplexMax(crosscorr);
     //recoveredPayload = testpacket[idx-len(preamble)+1:idx+len(data_encoded)+1] # Reconstruct original packet minus preamble
     int start = idx - preamble.length + 1;
-    int end = idx + data_encoded.length + 1;
+    int end = idx + data_length + 1;
     int recoveredPayload_length = end - start;
     Complex_Array_Tuple recoveredPayload = zerosComplex(recoveredPayload_length);
     for (int i = start; i < end; i++)
@@ -379,30 +336,4 @@ Array_Tuple demodulation(Complex_Array_Tuple recoveredData, char scheme[], Array
     int error = CRC_check(demod_bits, CRC_key);
     printf("CRC error: %d\n", error);
     return demod_bits;
-}
-void DisplayOutput(Array_Tuple data, Array_Tuple demod_bits){
-    // This just calculates how many bits were correctly received
-    int num_correct = 0;
-    int num = 0;
-    printf("Tx [%3d]: |", data.length);
-    for (int index = 0; index < data.length; index++)
-    {
-        num++;
-        int value = (int)round(demod_bits.array[index]);
-        int expected = (int)round(data.array[index]);
-        if (value == expected){
-            num_correct++;
-        }
-        printf("%1d|", expected);
-    }
-    printf("\n");
-    printf("Rx [%3d]: |", demod_bits.length);
-    for (int i = 0; i < data.length; i++)
-    {
-        int value = (int)round(demod_bits.array[i]);
-        printf("%1d|", value);
-    }
-    printf("\n");
-    
-    printf("Received: %d / %d bits   |   %.1lf%%\n", num_correct, num, round((double)num_correct / (double)num * 100.0));
 }

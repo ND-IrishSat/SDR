@@ -1,6 +1,8 @@
+#ifndef CRC_H // if CRC is not defined, then define it
+#define CRC_H
 // CRC.h
 // Rylan Paul
-#include "CRC.c"
+#include "src/CRC.c"
 // CRC
 
 // CRC_xor 
@@ -11,3 +13,5 @@ Array_Tuple CRC_mod2div(Array_Tuple dividend_array, Array_Tuple divisor_array);
 Array_Tuple CRC_encodeData(Array_Tuple data, Array_Tuple key);
 
 int CRC_check(Array_Tuple codeword, Array_Tuple key);
+
+#endif /* CRC.h end */
