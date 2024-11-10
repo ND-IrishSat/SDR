@@ -2,10 +2,9 @@ COMP = gcc
 EXEC = main_executable
 RECV = receive
 TRANS = transmit
-INCLUDE = lib/fftw3/include
-LINK = lib/fftw3/lib
+INCLUDE =
+LINK =
 LIBS = -lm
-LIBS += -lfftw3
 
 $(EXEC) :
 	$(COMP) main.c -o $(EXEC) -I $(INCLUDE) -L $(LINK) $(LIBS)
