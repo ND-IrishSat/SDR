@@ -2,46 +2,56 @@
 #include <math.h>
 #include "../fftw3/include/fftw3.h"
 #include "../standardArray.h"
+
 // Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
-Complex_Array_Tuple fft(Complex_Array_Tuple array){ 
-    int N = array.real.length;
-    fftw_complex *in_fftw;
-    fftw_complex *out_fftw;
-    fftw_plan p;
-    in_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    out_fftw = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
 
-    p = fftw_plan_dft_1d(N, in_fftw, out_fftw, FFTW_FORWARD, FFTW_ESTIMATE);
+// FFT function for Complex_Array_Tuple
+Complex_Array_Tuple fft(Complex_Array_Tuple x) {
+    int N = x.real.length;
+    if (N <= 1) return x;  // base case for recursion
 
-    // Populate input array with real and imaginary parts
-    for (int i = 0; i < N; i++) {
-        double r = array.real.array[i];
-        double im = array.imaginary.array[i];
-        (&in_fftw[i])[0] = r; // Real part //? should work without (&), so CHECK THIS
-        (&in_fftw[i])[1] = im; // Imaginary part
-    }
-    // Execute FFT
-    fftw_execute(p);
+    // allocate memory for even and odd parts
+    Complex_Array_Tuple even = zerosComplex(N / 2);
+    Complex_Array_Tuple odd = zerosComplex(N / 2);
 
-    // Execute FFT
-    fftw_execute(p);
-
-    // Store output in the provided struct
-    Complex_Array_Tuple out_struct = zerosComplex(N);
-
-    // Extract real and imaginary parts from output
-    for (int i = 0; i < N; i++) {
-        double r = (&out_fftw[i])[0];
-        double im = (&out_fftw[i])[1];
-        out_struct.real.array[i] = r; // Real part
-        out_struct.imaginary.array[i] = im; // Imaginary part
+    // split the array into even and odd indices
+    for (int i = 0; i < N / 2; i++) {
+        even.real.array[i] = x.real.array[2 * i];
+        even.imaginary.array[i] = x.imaginary.array[2 * i];
+        odd.real.array[i] = x.real.array[2 * i + 1];
+        odd.imaginary.array[i] = x.imaginary.array[2 * i + 1];
     }
 
-    // Free memory and destroy plan
-    fftw_destroy_plan(p);
-    fftw_free(in_fftw);
-    fftw_free(out_fftw);
-    return out_struct;
+    // Recursively apply FFT to both halves
+    Complex_Array_Tuple fft_even = fft(even);
+    Complex_Array_Tuple fft_odd = fft(odd);
+
+    // Prepare output structure
+    Complex_Array_Tuple result = zerosComplex(N);
+
+    // Combine the results
+    for (int k = 0; k < N / 2; k++) {
+        double t = -2 * M_PI * k / N;
+        double cos_t = cos(t);
+        double sin_t = sin(t);
+
+        double temp_real = cos_t * fft_odd.real.array[k] - sin_t * fft_odd.imaginary.array[k];
+        double temp_imag = cos_t * fft_odd.imaginary.array[k] + sin_t * fft_odd.real.array[k];
+
+        result.real.array[k] = fft_even.real.array[k] + temp_real;
+        result.imaginary.array[k] = fft_even.imaginary.array[k] + temp_imag;
+
+        result.real.array[k + N / 2] = fft_even.real.array[k] - temp_real;
+        result.imaginary.array[k + N / 2] = fft_even.imaginary.array[k] - temp_imag;
+    }
+
+    // Free temporary structures
+    free(even.real.array);
+    free(even.imaginary.array);
+    free(odd.real.array);
+    free(odd.imaginary.array);
+
+    return result;
 }
 //np.hamming
 Array_Tuple hamming(int M){ 
