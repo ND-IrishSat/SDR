@@ -1,6 +1,6 @@
 // signal_processing.c
 #include <math.h>
-#include <fftw3.h>
+#include "../fftw3/include/fftw3.h"
 #include "../standardArray.h"
 // Using the fftw3 library, calculates discrete fft on an array np.fft.fft()
 Complex_Array_Tuple fft(Complex_Array_Tuple array){ 
